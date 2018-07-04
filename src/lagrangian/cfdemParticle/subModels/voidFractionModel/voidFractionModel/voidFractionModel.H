@@ -66,6 +66,10 @@ protected:
         mutable volScalarField voidfractionPrev_;
 
         mutable volScalarField voidfractionNext_;
+		
+		mutable volScalarField particlefractionPrev_;
+		
+		mutable volScalarField particlefractionNext_;
 
         mutable double ** cellsPerParticle_;
 
@@ -129,10 +133,16 @@ public:
         virtual void setvoidFraction(double** const&,double**&,double**&,double**&,double**&) const = 0;
 
         tmp<volScalarField> voidFractionInterp() const;
+		
+		tmp<volScalarField> particleFractionInterp() const;
 
         inline volScalarField& voidFractionPrev()const { return voidfractionPrev_; }
 
         inline volScalarField& voidFractionNext()const { return voidfractionNext_; }
+		
+		inline volScalarField& particleFractionPrev()const { return particlefractionPrev_; }
+
+        inline volScalarField& particleFractionNext()const { return particlefractionNext_; }
 
         inline scalar weight()const { return weight_; }
 
@@ -142,9 +152,11 @@ public:
         {
             if (propsDict.found("weight")) weight_ = readScalar(propsDict.lookup("weight"));
             if (propsDict.found("porosity")) porosity_ = readScalar(propsDict.lookup("porosity"));
-        };
+        }
 
         void resetVoidFractions() const;
+		
+		void resetParticleFractions() const;
 
         //void undoVoidFractions(double**const&) const;
 

@@ -49,6 +49,7 @@ $(forceModels)/Archimedes/Archimedes.C
 $(forceModels)/ArchimedesIB/ArchimedesIB.C
 $(forceModels)/checkCouplingInterval/checkCouplingInterval.C
 $(forceModels)/DiFeliceDrag/DiFeliceDrag.C
+$(forceModels)/DiFeliceDragBubble/DiFeliceDragBubble.C
 $(forceModels)/fieldStore/fieldStore.C
 $(forceModels)/fieldTimeAverage/fieldTimeAverage.C
 $(forceModels)/forceModel/forceModel.C
@@ -114,12 +115,14 @@ $(registryModels)/registryModel/newRegistryModel.C
 $(registryModels)/registryModel/registryModel.C
 
 $(smoothingModels)/constDiffSmoothing/constDiffSmoothing.C
+$(smoothingModels)/diffusionSmoothing/diffusionSmoothing.C
 $(smoothingModels)/noSmoothing/noSmoothing.C
 $(smoothingModels)/smoothingModel/newSmoothingModel.C
 $(smoothingModels)/smoothingModel/smoothingModel.C
 
 $(voidFractionModels)/bigParticleVoidFraction/bigParticleVoidFraction.C
 $(voidFractionModels)/centreVoidFraction/centreVoidFraction.C
+$(voidFractionModels)/diffCentreVoidFraction/diffCentreVoidFraction.C
 $(voidFractionModels)/dividedVoidFraction/dividedVoidFraction.C
 $(voidFractionModels)/GaussVoidFraction/GaussVoidFraction.C
 $(voidFractionModels)/IBVoidFraction/IBVoidFraction.C

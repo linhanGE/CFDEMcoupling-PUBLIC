@@ -177,6 +177,11 @@ inline double ** cfdemCloud::radii() const
     return radii_;
 }
 
+inline double ** cfdemCloud::density() const
+{
+    return density_;
+}
+
 inline double ** cfdemCloud::voidfractions() const
 {
     return voidfractions_;
@@ -189,6 +194,11 @@ inline void cfdemCloud::get_radii(double **& values) const
 //    for (int i=0;i<numberOfParticles_;i++)
 //        radii_[0][i]=values[0][i];
     values=radii_;
+}
+
+inline void cfdemCloud::get_density(double **& values) const
+{
+    values=density_;
 }
 
 inline double ** cfdemCloud::cellIDs() const
@@ -222,6 +232,11 @@ inline double cfdemCloud::particleVolume(int index)
 inline scalar cfdemCloud::radius(int index)
 {
     return radii_[index][0];
+}
+
+inline scalar cfdemCloud::Density(int index)
+{
+    return density_[index][0];
 }
 
 inline double cfdemCloud::d(int index)

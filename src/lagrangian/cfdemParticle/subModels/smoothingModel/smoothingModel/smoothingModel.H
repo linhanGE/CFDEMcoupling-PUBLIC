@@ -61,7 +61,10 @@ protected:
 
     mutable volVectorField vSmoothField_;
     mutable volScalarField sSmoothField_;
-
+	
+	mutable volVectorField vDiffusionField_;
+	mutable volScalarField sDiffusionField_;
+    
     void checkFields(volScalarField&) const;
     void checkFields(volVectorField&) const;
 
@@ -115,11 +118,13 @@ public:
         virtual void smoothen(volScalarField&) const=0;
 
         virtual void smoothen(volVectorField&) const=0;
-
+		
+		virtual void UsSmoothen(volVectorField&, volScalarField&) const;
+		
         virtual void smoothenAbsolutField(volScalarField&) const; //for smoothing absolute fields (NOT per m³)
 
         virtual void smoothenAbsolutField(volVectorField&) const; //for smoothing absolute fields (NOT per m³)
-
+		
         virtual void smoothenReferenceField(volVectorField&) const=0;
 };
 

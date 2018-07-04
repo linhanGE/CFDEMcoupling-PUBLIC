@@ -83,6 +83,32 @@ voidFractionModel::voidFractionModel
         /*sm.mesh(),
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 1)*/
     ),
+	particlefractionPrev_
+    (   IOobject
+        (
+            "particlefractionPrev",
+            sm.mesh().time().timeName(),
+            sm.mesh(),
+            IOobject::READ_IF_PRESENT,//MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        // sm.mesh().lookupObject<volScalarField> ("particlefraction")
+        sm.mesh(),
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)    // since fraction will automatically calculate before running CFD
+    ),
+	particlefractionNext_
+    (   IOobject
+        (
+            "particlefractionNext",
+            sm.mesh().time().timeName(),
+            sm.mesh(),
+            IOobject::READ_IF_PRESENT,//MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        // sm.mesh().lookupObject<volScalarField> ("particlefraction")
+        sm.mesh(),
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
+    ),
     cellsPerParticle_(NULL),
     maxCellsPerParticle_(1),
     weight_(1.),
@@ -132,10 +158,37 @@ tmp<volScalarField> Foam::voidFractionModel::voidFractionInterp() const
     }
 }
 
+tmp<volScalarField> Foam::voidFractionModel::particleFractionInterp() const
+{
+    scalar tsf = particleCloud_.dataExchangeM().timeStepFraction();
+    /*if(1-tsf < 1e-4 && particleCloud_.dataExchangeM().couplingStep() > 1)   // if no subTS &&  !firstTS
+    {
+        //Info << "using voidfractionPrev" << endl;
+        return tmp<volScalarField>
+        (
+            new volScalarField("alpha_voidFractionModel", voidfractionPrev_)
+        );
+    }
+    else*/                                                                    // if subTS || firstTS
+    {
+        //Info << "using voidfraction blend, tsf=" << tsf << endl;
+        return tmp<volScalarField>
+        (
+            new volScalarField("alpha_particleFractionModel", 1 - ((1 - tsf) * particlefractionPrev_ + tsf * particlefractionNext_))
+        );
+    }
+}
+
 void Foam::voidFractionModel::resetVoidFractions() const
 {
     voidfractionPrev_ == voidfractionNext_;
     voidfractionNext_ == dimensionedScalar("one", voidfractionNext_.dimensions(), 1.);
+}
+
+void Foam::voidFractionModel::resetParticleFractions() const
+{
+	particlefractionPrev_ == particlefractionNext_;
+	particlefractionNext_ == dimensionedScalar("zero", particlefractionNext_.dimensions(), 0.);
 }
 
 /*void Foam::voidFractionModel::undoVoidFractions(double**const& mask) const

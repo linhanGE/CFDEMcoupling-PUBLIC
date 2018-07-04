@@ -127,6 +127,8 @@ protected:
     mutable double **Cds_;
 
     mutable double **radii_;
+	
+	mutable double **density_;
 
     mutable double **voidfractions_;
 
@@ -250,8 +252,12 @@ protected:
     virtual void setVoidFraction();
 
     virtual void resetVoidFraction();
+	
+	virtual void resetParticleFraction();
 
     virtual void setAlpha(volScalarField&);
+	
+	virtual void setAlphaDiffusion(volScalarField&,volScalarField&);
 
     virtual void setParticleForceField();
 
@@ -365,10 +371,14 @@ public:
        inline double ** Cds() const;
 
        inline double ** radii() const;
+	   
+	   inline double ** density() const;
 
        inline double ** voidfractions() const;
 
        inline void get_radii(double**&) const;
+	   
+	   inline void get_density(double**&) const;
 
        inline double ** cellIDs() const;
 
@@ -381,6 +391,8 @@ public:
        virtual inline double particleVolume(int);
 
        inline scalar radius(int);
+	   
+	   inline scalar Density(int);
 
        virtual inline double d(int);
 
@@ -541,6 +553,8 @@ public:
 
       // write cfdemCloud internal data
         virtual bool evolve(volScalarField&,volVectorField&,volVectorField&);
+		
+		virtual bool diffusionEvolve(volScalarField&,volScalarField&,volVectorField&,volVectorField&);
 
         virtual bool reAllocArrays() const;
 
@@ -554,6 +568,8 @@ public:
 
     // functions
         tmp<fvVectorMatrix> divVoidfractionTau(volVectorField& ,volScalarField&) const;
+		
+		tmp<fvVectorMatrix> divVoidfractionTauVOF(volVectorField&, volScalarField&) const;
 
         tmp<volScalarField> ddtVoidfraction() const;
 
@@ -566,6 +582,8 @@ public:
         //tmp<fvVectorMatrix> ddtVoidfractionU(volVectorField& ,volScalarField&) const;
 
         tmp<volScalarField> voidfractionNuEff(volScalarField&) const;
+		
+		tmp<volScalarField> voidfractionNuEffVOF(volScalarField&) const;
 
         void resetArray(double**&,int,int,double resetVal=0.);
 
