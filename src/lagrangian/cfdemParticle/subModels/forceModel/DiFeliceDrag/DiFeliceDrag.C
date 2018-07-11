@@ -67,8 +67,7 @@ DiFeliceDrag::DiFeliceDrag
     voidfractionFieldName_(propsDict_.lookup("voidfractionFieldName")),
     voidfraction_(sm.mesh().lookupObject<volScalarField> (voidfractionFieldName_)),
     UsFieldName_(propsDict_.lookup("granVelFieldName")),
-    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
-    diffusionSmoothing_("off")
+    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_))
 {
     // suppress particle probe
     if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -76,8 +75,8 @@ DiFeliceDrag::DiFeliceDrag
     if(probeIt_)
     {
         particleCloud_.probeM().initialize(typeName, typeName+".logDat");
-        particleCloud_.probeM().vectorFields_.append("dragForce");    //first entry must the be the force
-        particleCloud_.probeM().vectorFields_.append("Urel");         //other are debug
+        particleCloud_.probeM().vectorFields_.append("dragForce"); //first entry must the be the force
+        particleCloud_.probeM().vectorFields_.append("Urel");        //other are debug
         particleCloud_.probeM().scalarFields_.append("Rep");          //other are debug
         particleCloud_.probeM().scalarFields_.append("Cd");                 //other are debug
         particleCloud_.probeM().scalarFields_.append("voidfraction");       //other are debug
@@ -99,11 +98,6 @@ DiFeliceDrag::DiFeliceDrag
     // read those switches defined above, if provided in dict
     for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
         forceSubM(iFSub).readSwitches();
-	
-	if (propsDict_.found("diffusionSmoothing"))
-	{
-		diffusionSmoothing_=word(propsDict_.lookup("diffusionSmoothing"));
-	}
 }
 
 
@@ -176,7 +170,7 @@ void DiFeliceDrag::setForce() const
                 forceSubM(0).scaleDia(ds,index); //caution: this fct will scale ds!
 
                 //Update any scalar or vector quantity
-				for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
+                for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
                       forceSubM(iFSub).update(  index, 
                                                 cellI,
                                                 ds,
@@ -218,22 +212,15 @@ void DiFeliceDrag::setForce() const
 
                     forceSubM(0).scaleCoeff(dragCoefficient,dParcel,index);
                     drag = dragCoefficient*Ur; //total drag force!
-					
-                    if (diffusionSmoothing_==word("off")) 
-					{
-						// explicitCorr
-						for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
-							forceSubM(iFSub).explicitCorr( drag, 
-														   dragExplicit,
-														   dragCoefficient,
-														   Ufluid, U_[cellI], Us, UsField_[cellI],
-														   forceSubM(iFSub).verbose()
-														 );
-					}
-					else 
-					{
-						dragExplicit = drag;
-					}
+
+                    // explicitCorr
+                    for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
+                        forceSubM(iFSub).explicitCorr( drag, 
+                                                       dragExplicit,
+                                                       dragCoefficient,
+                                                       Ufluid, U_[cellI], Us, UsField_[cellI],
+                                                       forceSubM(iFSub).verbose()
+                                                     );
                 }
 
                 if(forceSubM(0).verbose() && index >-1 && index <102)

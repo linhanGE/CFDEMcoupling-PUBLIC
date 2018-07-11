@@ -83,35 +83,7 @@ Foam::smoothingModel::smoothingModel
         ),
         particleCloud_.mesh(),
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
-    ),
-	vDiffusionField_
-    (   
-        IOobject
-        (
-            "diffusionVectorField",
-            particleCloud_.mesh().time().timeName(),
-            particleCloud_.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        particleCloud_.mesh(),
-        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
-		zeroGradientFvPatchScalarField::typeName
-    ),
-	sDiffusionField_
-    (   
-        IOobject
-        (
-            "diffusionScalarField",
-            particleCloud_.mesh().time().timeName(),
-            particleCloud_.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        particleCloud_.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
-		zeroGradientFvPatchScalarField::typeName
-    )	
+    )
 {}
 
 

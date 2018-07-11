@@ -71,8 +71,6 @@ private:
     word UsFieldName_;   
 
     const volVectorField& UsField_;  // the average particle velocity field (for implicit/expliti force split)
-	
-	word diffusionSmoothing_;
 
 public:
 

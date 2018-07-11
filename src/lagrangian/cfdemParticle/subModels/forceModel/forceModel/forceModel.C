@@ -81,7 +81,9 @@ forceModel::forceModel
             IOobject::AUTO_WRITE
         ),
         sm.mesh(),
-        dimensionedVector("zero", dimensionSet(1,1,-2,0,0), vector(0,0,0)) // N
+		dimensionedVector("zero", dimensionSet(1,1,-2,0,0), vector(0,0,0)),// N
+		zeroGradientFvPatchVectorField::typeName  // for diffusion-based method, zeroGradient is required
+		// sm.mesh().lookupObject<volScalarField> ("f")
     ),
     modelType_(sm.modelType()),
     probeIt_(sm.probeM().active()),

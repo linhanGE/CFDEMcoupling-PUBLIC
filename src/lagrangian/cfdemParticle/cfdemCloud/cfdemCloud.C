@@ -578,8 +578,8 @@ void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 
 void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha, volScalarField& alphas)
 {
-	alpha = scalar(1) - cfdemCloud::voidFractionM().particleFractionInterp();
 	alphas = cfdemCloud::voidFractionM().particleFractionInterp();
+	alpha = 1.0 - alphas;
 }
 
 void Foam::cfdemCloud::setParticleForceField()
@@ -614,6 +614,17 @@ void Foam::cfdemCloud::setVectorAverages()
         false
     );
     if(verbose_) Info << "setVectorAverage done." << endl;
+}
+
+void Foam::cfdemCloud::setUnsmoothedUsbyAlphas()
+{
+	averagingM().setVectorSum
+    (
+        averagingM().UsNext(),
+        velocities_,
+        particleVolumes_,  // this is actually the alphas in diffusion method
+        NULL //mask
+    );
 }
 // * * * * * * * * * * * * * * * public Member Functions  * * * * * * * * * * * * * //
 void Foam::cfdemCloud::checkCG(bool ok)
@@ -868,11 +879,11 @@ bool Foam::cfdemCloud::diffusionEvolve
     if(!ignore())
     {
         if(!writeTimePassed_ && mesh_.time().outputTime()) writeTimePassed_=true;
-        if (dataExchangeM().doCoupleNow())
+        if (dataExchangeM().doCoupleNow())   // couple at first sub CFD time step, if there is only one CFD step doCoupleNow must be true
         {
             Info << "\n Coupling..." << endl;
-            dataExchangeM().couple(0);
-            doCouple=true;
+            dataExchangeM().couple(0);       // coupling step will be added by 1, if doCoupleNow == true, this will be true, LIGGGHTS will be excecuated  if i == 0    *************
+            doCouple=true;                   // force will be calculated for CFD and DEM part
 
             // reset vol Fields
             clockM().start(16,"resetVolFields");
@@ -913,13 +924,14 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            setVectorAverages();
-
+            setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
 
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
-			smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); // must use unsmoothed Us field, so this should be smoothed first
+			
+			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
+			smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); 
 			
             clockM().stop("setVectorAverage");
         }
@@ -936,9 +948,8 @@ bool Foam::cfdemCloud::diffusionEvolve
         clockM().start(24,"interpolateEulerFields");
 
         // update voidFractionField
-        setAlphaDiffusion(alpha,alphas);
-        alpha.correctBoundaryConditions();
-
+        setAlphaDiffusion(alpha,alphas);    // alpha must be passed, cause used in other head file
+        
         // update mean particle velocity Field
         Us = averagingM().UsInterp();
         Us.correctBoundaryConditions();
@@ -951,7 +962,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             // set particles forces
             clockM().start(21,"setForce");
             if(verbose_) Info << "- setForce(forces_)" << endl;
-            setForces();
+            setForces();                // calculate based on the latest Us and voidfraction,but old U
             if(verbose_) Info << "setForce done." << endl;
             calcMultiphaseTurbulence();
             if(verbose_) Info << "calcMultiphaseTurbulence done." << endl;

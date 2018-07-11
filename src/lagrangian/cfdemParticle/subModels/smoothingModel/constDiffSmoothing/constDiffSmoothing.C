@@ -100,7 +100,7 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
     volScalarField sSmoothField = sSmoothField_;
 
     sSmoothField.dimensions().reset(fieldSrc.dimensions());
-    sSmoothField ==fieldSrc;
+    sSmoothField = fieldSrc;
     sSmoothField.correctBoundaryConditions();
     sSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
     sSmoothField.oldTime()=fieldSrc;

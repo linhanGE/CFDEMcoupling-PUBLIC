@@ -92,9 +92,9 @@ voidFractionModel::voidFractionModel
             IOobject::READ_IF_PRESENT,//MUST_READ,
             IOobject::AUTO_WRITE
         ),
-        // sm.mesh().lookupObject<volScalarField> ("particlefraction")
         sm.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)    // since fraction will automatically calculate before running CFD
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),    // since fraction will automatically calculate before running CFD
+		zeroGradientFvPatchScalarField::typeName
     ),
 	particlefractionNext_
     (   IOobject
@@ -105,9 +105,9 @@ voidFractionModel::voidFractionModel
             IOobject::READ_IF_PRESENT,//MUST_READ,
             IOobject::AUTO_WRITE
         ),
-        // sm.mesh().lookupObject<volScalarField> ("particlefraction")
         sm.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
+		zeroGradientFvPatchScalarField::typeName
     ),
     cellsPerParticle_(NULL),
     maxCellsPerParticle_(1),
@@ -174,7 +174,7 @@ tmp<volScalarField> Foam::voidFractionModel::particleFractionInterp() const
         //Info << "using voidfraction blend, tsf=" << tsf << endl;
         return tmp<volScalarField>
         (
-            new volScalarField("alpha_particleFractionModel", 1 - ((1 - tsf) * particlefractionPrev_ + tsf * particlefractionNext_))
+            new volScalarField("alpha_particleFractionModel", (1 - tsf) * particlefractionPrev_ + tsf * particlefractionNext_)
         );
     }
 }
