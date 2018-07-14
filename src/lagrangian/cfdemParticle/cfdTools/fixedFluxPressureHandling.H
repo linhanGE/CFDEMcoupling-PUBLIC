@@ -10,7 +10,7 @@
 #ifndef version40
     if (modelType=="A")
     {
-        setSnGrad<fixedFluxPressureFvPatchScalarField>
+        setSnGrad<fixedFluxPressureFvPatchScalarField>          // gradient at boundary
         (
             #ifdef versionv1612plus
                 p.boundaryFieldRef(),
@@ -24,7 +24,7 @@
         );
     }else
     {
-        setSnGrad<fixedFluxPressureFvPatchScalarField>
+        setSnGrad<fixedFluxPressureFvPatchScalarField>         
         (
             #ifdef versionv1612plus
                 p.boundaryFieldRef(),

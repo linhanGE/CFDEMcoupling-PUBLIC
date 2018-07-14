@@ -139,7 +139,7 @@ void averagingModel::setVectorSum
 
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
-            for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++)
+            for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++)    // cellsPerParticle defined in diffCentreVoidFraction.C = 1
             {
                 cellI = particleCloud_.cellIDs()[index][subCell];
 

@@ -626,6 +626,7 @@ void Foam::cfdemCloud::setUnsmoothedUsbyAlphas()
         NULL //mask
     );
 }
+
 // * * * * * * * * * * * * * * * public Member Functions  * * * * * * * * * * * * * //
 void Foam::cfdemCloud::checkCG(bool ok)
 {
@@ -924,7 +925,7 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
+            setUnsmoothedUsbyAlphas();            // by this function, UsNext = Us * alphas (unsmoothed)
 
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
