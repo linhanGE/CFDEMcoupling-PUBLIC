@@ -150,6 +150,16 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
     double deltaT = vSmoothField_.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
 
+    vector Utotal1(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
+        {
+            Utotal1 += vSmoothField.primitiveFieldRef()[cellI];
+        }
+    }
+
     // do smoothing
     solve
     (
@@ -157,12 +167,27 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
        -fvm::laplacian(DT_, vSmoothField)
     );
 
+    vector Utotal2(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
+        {
+            Utotal2 += vSmoothField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
+        }
+    }
+
     // get data from working vSmoothField
     fieldSrc=vSmoothField;
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
     {
+        reduce(Utotal1,sumOp<vector>());
+        reduce(Utotal2,sumOp<vector>());
+        Info << "total before smoothing: " << Utotal1 << endl;
+        Info << "total after smoothing: " << Utotal2 << endl;
+
         Info << "min/max(fieldoldTime) (unsmoothed): " << min(vSmoothField.oldTime()) << tab << max(vSmoothField.oldTime()) << endl;
         Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
         Info << "min/max(fieldSrc.oldTime): " << min(fieldSrc.oldTime()) << tab << max(fieldSrc.oldTime()) << endl;

@@ -103,7 +103,7 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                 particleVolumes[index][0] = volume/cellVol;               // in diffusion method, this should be volume fraction,pass to setVoidFraction
                 particleV[index][0] = volume;
 
-                voidfractionNext_[cellI] -= volume/cellVol;       // alpha = 1 - epsilon_s 
+                voidfractionNext_[cellI] -= volume/cellVol;               // alpha = 1 - epsilon_s 
 
                 particlefractionNext_.primitiveFieldRef()[cellI] += volume/cellVol;				
 

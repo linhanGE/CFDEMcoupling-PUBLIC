@@ -184,7 +184,8 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
 
     if(verbose_)
     {
-        Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
+
+        Info << "min/max(alphas): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
     }
 
 }
@@ -221,12 +222,21 @@ void Foam::diffusionSmoothing::smoothen(volVectorField& fieldSrc) const
     label startIndex = diffusionRunTime_.timeIndex();
 
 	Info<< "smoothing " << fieldSrc.name() << endl;
+    vector Ftotal1(vector::zero);
+    if(verbose_) 
+    {
+        forAll(fieldSrc.primitiveFieldRef(), cellI)
+        {
+            Ftotal1 += fieldSrc.primitiveFieldRef()[cellI];
+        }
+    }
 
 	diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();
 	
 	while (diffusionRunTime_.loop())
     {
+        Info << "timeIndex = " << diffusionRunTime_.timeIndex() << endl;
         if (diffusionRunTime_.timeIndex() == 1)
         {
             while (simple_.correctNonOrthogonal())
@@ -247,13 +257,26 @@ void Foam::diffusionSmoothing::smoothen(volVectorField& fieldSrc) const
 
     // get data from working diffWorkField - will copy only values at new time
     fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
+    vector Ftotal2(vector::zero);
+    if(verbose_) 
+    {
+        forAll(fieldSrc.primitiveFieldRef(), cellI)
+        {
+            Ftotal2 += fieldSrc.primitiveFieldRef()[cellI];
+        }
+    }
+    
     diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
-	
+
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
     {
-        Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
+        reduce(Ftotal1,sumOp<vector>());
+        reduce(Ftotal2,sumOp<vector>());
+        Info << "total f before smoothing: " << Ftotal1 << endl;
+        Info << "total f after smoothing: " << Ftotal2 << endl;
+        Info << "min/max(f): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
     }
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -285,10 +308,20 @@ void Foam::diffusionSmoothing::UsSmoothen(volVectorField& fieldSrc, volScalarFie
 	
     dimensionedTensor DT("DT", dimensionSet(0, 2, -1, 0, 0), smoothDirection_);
 	
-	scalar startTime = diffusionRunTime_.startTimeIndex();
-    label startIndex = diffusionRunTime_.timeIndex();
+	scalar startTime = diffusionRunTime_.startTimeIndex();  // Return start time index
+    label startIndex = diffusionRunTime_.timeIndex();       // Return current time index. 
 
 	Info<< "smoothing " << fieldSrc.name() << "*" << alphas.name() << endl;
+
+    vector Utotal1(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        {
+            Utotal1 += diffWorkField.primitiveFieldRef()[cellI];
+        }
+    }
 
 	diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();
@@ -299,12 +332,18 @@ void Foam::diffusionSmoothing::UsSmoothen(volVectorField& fieldSrc, volScalarFie
         {
             while (simple_.correctNonOrthogonal())
             {
-                solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT, diffWorkField));
+                solve(
+                    fvm::ddt(diffWorkField) 
+                    - fvm::laplacian(DT, diffWorkField)
+                );
             }
         }
         else
         {
-            solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT, diffWorkField));
+            solve(
+                    fvm::ddt(diffWorkField) 
+                    - fvm::laplacian(DT, diffWorkField)
+                );
         }
     }
 
@@ -313,7 +352,16 @@ void Foam::diffusionSmoothing::UsSmoothen(volVectorField& fieldSrc, volScalarFie
 
     diffusionRunTime_.setTime(startTime,startIndex);
 
-    // get data from working diffWorkField - will copy only values at new time
+    vector Utotal2(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        {
+            Utotal2 += diffWorkField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
+        }
+    }
+
 	forAll(diffWorkField.primitiveFieldRef(), cellI)
     {
         if (alphas.primitiveFieldRef()[cellI] > ROOTVSMALL)
@@ -322,15 +370,20 @@ void Foam::diffusionSmoothing::UsSmoothen(volVectorField& fieldSrc, volScalarFie
                 (alphas.primitiveFieldRef()[cellI]);
         }
     }
-	
+    // get data from working diffWorkField - will copy only values at new time
     fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
+    
     diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
 	
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
-    {
-        Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
+    {   
+        reduce(Utotal1,sumOp<vector>());
+        reduce(Utotal2,sumOp<vector>());
+        Info << "total Us*alphas before smoothing: " << Utotal1 << endl;
+        Info << "total Us*alphas after smoothing: " << Utotal2 << endl;
+        Info << "min/max(Us): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
     }
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

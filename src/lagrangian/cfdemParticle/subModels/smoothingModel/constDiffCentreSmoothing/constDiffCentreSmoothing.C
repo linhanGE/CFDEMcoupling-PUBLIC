@@ -199,6 +199,16 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
 
     double deltaT = diffWorkField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
+    
+    vector Utotal1(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        {
+            Utotal1 += diffWorkField.primitiveFieldRef()[cellI];
+        }
+    }
 
     // do the smoothing
     solve
@@ -207,6 +217,16 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
        -fvm::laplacian(DT_, diffWorkField)
     );
 	
+    vector Utotal2(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        {
+            Utotal2 += diffWorkField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
+        }
+    }
+
 	// get data from working diffWorkField - will copy only values at new time
 	forAll(diffWorkField.primitiveFieldRef(), cellI)
     {
@@ -223,6 +243,10 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
 
     if(verbose_)
     {
+        reduce(Utotal1,sumOp<vector>());
+        reduce(Utotal2,sumOp<vector>());
+        Info << "total Us*alphas before smoothing: " << Utotal1 << endl;
+        Info << "total Us*alphas after smoothing: " << Utotal2 << endl;
         Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
     }
 
