@@ -576,10 +576,9 @@ void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
     alpha = cfdemCloud::voidFractionM().voidFractionInterp();
 }
 
-void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha, volScalarField& alphas)
+void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
 {
-	alphas = cfdemCloud::voidFractionM().particleFractionInterp();
-	alpha = 1.0 - alphas;
+	alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
 }
 
 void Foam::cfdemCloud::setParticleForceField()
@@ -868,8 +867,7 @@ bool Foam::cfdemCloud::evolve
 bool Foam::cfdemCloud::diffusionEvolve
 (
     volScalarField& alpha,
-	volScalarField& alphas,
-    volVectorField& Us,
+	volVectorField& Us,
     volVectorField& U
 )
 {
@@ -949,7 +947,8 @@ bool Foam::cfdemCloud::diffusionEvolve
         clockM().start(24,"interpolateEulerFields");
 
         // update voidFractionField
-        setAlphaDiffusion(alpha,alphas);    // alpha must be passed, cause used in other head file
+        setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
+        alpha.correctBoundaryConditions();
         
         // update mean particle velocity Field
         Us = averagingM().UsInterp();

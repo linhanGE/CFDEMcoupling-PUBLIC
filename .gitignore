@@ -4,3 +4,4 @@ log_*
 log.*
 *~
 .vscode/
+platforms/

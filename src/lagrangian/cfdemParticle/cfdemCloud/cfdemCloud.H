@@ -257,7 +257,7 @@ protected:
 
     virtual void setAlpha(volScalarField&);
 	
-	virtual void setAlphaDiffusion(volScalarField&,volScalarField&);
+	virtual void setAlphaDiffusion(volScalarField&);
 
     virtual void setParticleForceField();
 
@@ -556,7 +556,7 @@ public:
       // write cfdemCloud internal data
         virtual bool evolve(volScalarField&,volVectorField&,volVectorField&);
 		
-		virtual bool diffusionEvolve(volScalarField&,volScalarField&,volVectorField&,volVectorField&);
+		virtual bool diffusionEvolve(volScalarField&,volVectorField&,volVectorField&);
 
         virtual bool reAllocArrays() const;
 

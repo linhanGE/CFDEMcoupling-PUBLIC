@@ -194,7 +194,6 @@ int main(int argc, char *argv[])
                     // Update the fixedFluxPressure BCs to ensure flux consistency
                     #include "fixedFluxPressureHandling.H"
                     
-
                     // Non-orthogonal pressure corrector loop
                     #if defined(version30)
                         while (piso.correctNonOrthogonal())
