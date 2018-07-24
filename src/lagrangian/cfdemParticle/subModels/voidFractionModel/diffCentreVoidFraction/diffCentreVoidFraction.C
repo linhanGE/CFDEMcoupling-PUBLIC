@@ -62,7 +62,6 @@ diffCentreVoidFraction::diffCentreVoidFraction
 :
     voidFractionModel(dict,sm),
     propsDict_(dict.subDict(typeName + "Props"))
-
 {
     checkWeightNporosity(propsDict_);
     if(porosity()!=1) FatalError << "porosity not used in diffCentreVoidFraction" << abort(FatalError);

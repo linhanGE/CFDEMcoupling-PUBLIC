@@ -61,10 +61,10 @@ capillary::capillary
 :
     forceModel(dict,sm),
     propsDict_(dict.subDict(typeName + "Props")),
-    VOFvoidfractionFieldName_(propsDict_.lookup("VOFvoidfractionFieldName")),
-    alpha_(sm.mesh().lookupObject<volScalarField> (VOFvoidfractionFieldName_)),
-    gradAlphaName_(propsDict_.lookup("gradAlphaName")),
-    gradAlpha_(sm.mesh().lookupObject<volVectorField> (gradAlphaName_)),
+    primaryPhaseFieldName_(propsDict_.lookup("primaryPhaseFieldName")),
+    alpha_(sm.mesh().lookupObject<volScalarField> (primaryPhaseFieldName_)),
+    /*gradAlphaName_(propsDict_.lookup("gradAlphaName")),
+    gradAlpha_(sm.mesh().lookupObject<volVectorField> (gradAlphaName_)),*/
     sigma_(readScalar(propsDict_.lookup("sigma"))),
     theta_(readScalar(propsDict_.lookup("theta"))),
     alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
@@ -101,6 +101,7 @@ capillary::~capillary()
 
 void capillary::setForce() const
 {
+    volVectorField gradAlpha_ = fvc::grad(alpha_);
     #include "resetAlphaInterpolator.H"
     #include "resetGradAlphaInterpolator.H"
 
@@ -156,7 +157,7 @@ void capillary::setForce() const
                     capillaryForce = -1*magGradAlphap*Fatt*C_;
                 }
 
-                if(true && mag(capillaryForce) > 0)
+                if(forceSubM(0).verbose() && mag(capillaryForce) > 0)
                 {
                 Info << "dp = " << dp << endl;
                 Info << "position = " << position << endl;
@@ -183,7 +184,6 @@ void capillary::setForce() const
             } // end if particle found on proc domain
         //}// end if in mask
     }// end loop particles
-Info << "capillary::setForce - done" << endl;
 }
 
 

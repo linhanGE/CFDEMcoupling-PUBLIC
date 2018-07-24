@@ -104,7 +104,12 @@ void Foam::constDiffCentreSmoothing::smoothen(volScalarField& fieldSrc) const
         zeroGradientFvPatchScalarField::typeName
     );
     // Create scalar smooth field from virgin scalar smooth field template
-    diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef();
+    diffWorkField.dimensions().reset(fieldSrc.dimensions());
+    diffWorkField = fieldSrc;
+    diffWorkField.correctBoundaryConditions();
+    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    diffWorkField.oldTime()=fieldSrc;
+    diffWorkField.oldTime().correctBoundaryConditions();
 
     double deltaT = diffWorkField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
@@ -117,16 +122,16 @@ void Foam::constDiffCentreSmoothing::smoothen(volScalarField& fieldSrc) const
        -fvm::laplacian(DT_, diffWorkField)
     );
 
-    // bound sSmoothField_
-    forAll(diffWorkField.primitiveFieldRef(),cellI)
+    // bound diffWorkField_
+    forAll(diffWorkField,cellI)
     {
-        if (diffWorkField.primitiveFieldRef()[cellI] > maxAlphas_)
+        if (diffWorkField[cellI] > maxAlphas_)
 			Info << "Unphysical alphas found" << endl;		
-		diffWorkField.primitiveFieldRef()[cellI]=max(minAlphas_,min(maxAlphas_,diffWorkField.primitiveFieldRef()[cellI]));
+		diffWorkField[cellI]=max(minAlphas_,min(maxAlphas_,diffWorkField[cellI]));
     }  
 
-    // get data from working sSmoothField - will copy only values at new time
-    fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
+    // get data from working diffWorkField - will copy only values at new time
+    fieldSrc = diffWorkField;
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
@@ -153,7 +158,12 @@ void Foam::constDiffCentreSmoothing::smoothen(volVectorField& fieldSrc) const
         zeroGradientFvPatchVectorField::typeName
     );
 	// Create scalar smooth field from virgin scalar smooth field template
-    diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef(); 
+    diffWorkField.dimensions().reset(fieldSrc.dimensions());
+    diffWorkField = fieldSrc;
+    diffWorkField.correctBoundaryConditions();
+    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    diffWorkField.oldTime()=fieldSrc;
+    diffWorkField.oldTime().correctBoundaryConditions();
 
     double deltaT = diffWorkField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
@@ -167,7 +177,7 @@ void Foam::constDiffCentreSmoothing::smoothen(volVectorField& fieldSrc) const
     );
 
     // get data from working vSmoothField
-    fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
+    fieldSrc = diffWorkField;
     fieldSrc.correctBoundaryConditions();  
 
     if(verbose_)
@@ -194,8 +204,13 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
         dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
         zeroGradientFvPatchVectorField::typeName
     );
-	
-    diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef(); 
+	// Create scalar smooth field from virgin scalar smooth field template
+    diffWorkField.dimensions().reset(fieldSrc.dimensions());
+    diffWorkField = fieldSrc;
+    diffWorkField.correctBoundaryConditions();
+    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    diffWorkField.oldTime()=fieldSrc;
+    diffWorkField.oldTime().correctBoundaryConditions();
 
     double deltaT = diffWorkField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
@@ -228,17 +243,16 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
     }
 
 	// get data from working diffWorkField - will copy only values at new time
-	forAll(diffWorkField.primitiveFieldRef(), cellI)
+	forAll(diffWorkField, cellI)
     {
-        if (alphas.primitiveFieldRef()[cellI] > ROOTVSMALL)
+        if (alphas[cellI] > ROOTVSMALL)
         {
-            diffWorkField.primitiveFieldRef()[cellI] /=
-                (alphas.primitiveFieldRef()[cellI]);
+            diffWorkField[cellI] /=alphas[cellI];
         }
     }
 
     // get data from working vSmoothField
-    fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
+    fieldSrc = diffWorkField;
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)

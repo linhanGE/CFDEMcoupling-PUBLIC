@@ -58,13 +58,9 @@ class capillary
 private:
     dictionary propsDict_;
 
-    word VOFvoidfractionFieldName_;
+    word primaryPhaseFieldName_;
 
     const volScalarField& alpha_;    // ref to VOF voidfraction
-
-    word gradAlphaName_;
-
-    const volVectorField& gradAlpha_;    // ref to fvc::grad(VOF voidfraction)
 
     const scalar sigma_;
 
