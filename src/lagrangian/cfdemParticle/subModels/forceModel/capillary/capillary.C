@@ -152,9 +152,9 @@ void capillary::setForce() const
                     Info << "within threshold limits" << endl;
                     // Calculate estimate attachment force as
                     // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
-                    scalar Fatt =   mag(sigma_*sin(theta_/2)*sin(theta_/2))*M_PI*dp;
+                    scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
 
-                    capillaryForce = -1*magGradAlphap*Fatt*C_;
+                    capillaryForce = -1*magGradAlphap*Fatt*C_* tanh(alphap-alphaThreshold_) /tanh(deltaAlphaIn_);
                 }
 
                 if(forceSubM(0).verbose() && mag(capillaryForce) > 0)
