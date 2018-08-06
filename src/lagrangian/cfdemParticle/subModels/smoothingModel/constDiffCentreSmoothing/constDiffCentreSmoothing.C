@@ -89,49 +89,36 @@ bool constDiffCentreSmoothing::doSmoothing() const
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 void Foam::constDiffCentreSmoothing::smoothen(volScalarField& fieldSrc) const
 {
-	volScalarField diffWorkField
-    (
-        IOobject
-        (
-            "tempDiffScalar",
-            particleCloud_.mesh().time().timeName(),
-            particleCloud_.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        particleCloud_.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
-        zeroGradientFvPatchScalarField::typeName
-    );
-    // Create scalar smooth field from virgin scalar smooth field template
-    diffWorkField.dimensions().reset(fieldSrc.dimensions());
-    diffWorkField = fieldSrc;
-    diffWorkField.correctBoundaryConditions();
-    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
-    diffWorkField.oldTime()=fieldSrc;
-    diffWorkField.oldTime().correctBoundaryConditions();
+	volScalarField sSmoothField = sSmoothField_;
+    
+    sSmoothField.dimensions().reset(fieldSrc.dimensions());
+    sSmoothField = fieldSrc;
+    sSmoothField.correctBoundaryConditions();
+    sSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    sSmoothField.oldTime()=fieldSrc;
+    sSmoothField.oldTime().correctBoundaryConditions();
 
-    double deltaT = diffWorkField.mesh().time().deltaTValue();
+    double deltaT = sSmoothField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
     
 	Info<< "smoothing " << fieldSrc.name() << endl;
     // do smoothing
     solve
     (
-        fvm::ddt(diffWorkField)
-       -fvm::laplacian(DT_, diffWorkField)
+        fvm::ddt(sSmoothField)
+       -fvm::laplacian(DT_, sSmoothField)
     );
 
-    // bound diffWorkField_
-    forAll(diffWorkField,cellI)
+    // bound sSmoothField
+    forAll(sSmoothField,cellI)
     {
-        if (diffWorkField[cellI] > maxAlphas_)
+        if (sSmoothField[cellI] > maxAlphas_)
 			Info << "Unphysical alphas found" << endl;		
-		diffWorkField[cellI]=max(minAlphas_,min(maxAlphas_,diffWorkField[cellI]));
+		sSmoothField[cellI]=max(minAlphas_,min(maxAlphas_,sSmoothField[cellI]));
     }  
 
-    // get data from working diffWorkField - will copy only values at new time
-    fieldSrc = diffWorkField;
+    // get data from working sSmoothField - will copy only values at new time
+    fieldSrc = sSmoothField;
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
@@ -143,41 +130,28 @@ void Foam::constDiffCentreSmoothing::smoothen(volScalarField& fieldSrc) const
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 void Foam::constDiffCentreSmoothing::smoothen(volVectorField& fieldSrc) const
 {
-    volVectorField diffWorkField
-    (
-        IOobject
-        (
-            "tempDiffVector",
-            particleCloud_.mesh().time().timeName(),
-            particleCloud_.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        particleCloud_.mesh(),
-        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
-        zeroGradientFvPatchVectorField::typeName
-    );
-	// Create scalar smooth field from virgin scalar smooth field template
-    diffWorkField.dimensions().reset(fieldSrc.dimensions());
-    diffWorkField = fieldSrc;
-    diffWorkField.correctBoundaryConditions();
-    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
-    diffWorkField.oldTime()=fieldSrc;
-    diffWorkField.oldTime().correctBoundaryConditions();
+    volVectorField vSmoothField = vSmoothField_;
 
-    double deltaT = diffWorkField.mesh().time().deltaTValue();
+    vSmoothField.dimensions().reset(fieldSrc.dimensions());
+    vSmoothField = fieldSrc;
+    vSmoothField.correctBoundaryConditions();
+    vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    vSmoothField.oldTime()=fieldSrc;
+    vSmoothField.oldTime().correctBoundaryConditions();
+
+    double deltaT = vSmoothField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
     
 	Info<< "smoothing " << fieldSrc.name() << endl;
     // do smoothing
     solve
     (
-        fvm::ddt(diffWorkField)
-       -fvm::laplacian(DT_, diffWorkField)
+        fvm::ddt(vSmoothField)
+       -fvm::laplacian(DT_, vSmoothField)
     );
 
     // get data from working vSmoothField
-    fieldSrc = diffWorkField;
+    fieldSrc = vSmoothField;
     fieldSrc.correctBoundaryConditions();  
 
     if(verbose_)
@@ -189,70 +163,57 @@ void Foam::constDiffCentreSmoothing::smoothen(volVectorField& fieldSrc) const
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volScalarField& alphas) const
 {
-    // Create scalar smooth field from virgin scalar smooth field template
-    volVectorField diffWorkField
-    (
-        IOobject
-        (
-            "tempDiffVector",
-            particleCloud_.mesh().time().timeName(),
-            particleCloud_.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        particleCloud_.mesh(),
-        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
-        zeroGradientFvPatchVectorField::typeName
-    );
-	// Create scalar smooth field from virgin scalar smooth field template
-    diffWorkField.dimensions().reset(fieldSrc.dimensions());
-    diffWorkField = fieldSrc;
-    diffWorkField.correctBoundaryConditions();
-    diffWorkField.oldTime().dimensions().reset(fieldSrc.dimensions());
-    diffWorkField.oldTime()=fieldSrc;
-    diffWorkField.oldTime().correctBoundaryConditions();
+    
+    volVectorField vSmoothField = vSmoothField_;
+	
+    vSmoothField.dimensions().reset(fieldSrc.dimensions());
+    vSmoothField = fieldSrc;
+    vSmoothField.correctBoundaryConditions();
+    vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    vSmoothField.oldTime()=fieldSrc;
+    vSmoothField.oldTime().correctBoundaryConditions();
 
-    double deltaT = diffWorkField.mesh().time().deltaTValue();
+    double deltaT = vSmoothField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
     
     vector Utotal1(vector::zero);
 
     if(verbose_) 
     {
-        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
         {
-            Utotal1 += diffWorkField.primitiveFieldRef()[cellI];
+            Utotal1 += vSmoothField.primitiveFieldRef()[cellI];
         }
     }
 
     // do the smoothing
     solve
     (
-        fvm::ddt(diffWorkField)
-       -fvm::laplacian(DT_, diffWorkField)
+        fvm::ddt(vSmoothField)
+       -fvm::laplacian(DT_, vSmoothField)
     );
 	
     vector Utotal2(vector::zero);
 
     if(verbose_) 
     {
-        forAll(diffWorkField.primitiveFieldRef(), cellI)
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
         {
-            Utotal2 += diffWorkField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
+            Utotal2 += vSmoothField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
         }
     }
 
-	// get data from working diffWorkField - will copy only values at new time
-	forAll(diffWorkField, cellI)
+	// get data from working vSmoothField - will copy only values at new time
+	forAll(vSmoothField.primitiveFieldRef(), cellI)
     {
-        if (alphas[cellI] > ROOTVSMALL)
+        if (alphas.primitiveFieldRef()[cellI] > ROOTVSMALL)
         {
-            diffWorkField[cellI] /=alphas[cellI];
+            vSmoothField.primitiveFieldRef()[cellI] /=alphas.primitiveFieldRef()[cellI];
         }
     }
 
     // get data from working vSmoothField
-    fieldSrc = diffWorkField;
+    fieldSrc = vSmoothField;
     fieldSrc.correctBoundaryConditions(); 
 
     if(verbose_)
@@ -261,6 +222,69 @@ void Foam::constDiffCentreSmoothing::UsSmoothen(volVectorField& fieldSrc, volSca
         reduce(Utotal2,sumOp<vector>());
         Info << "total Us*alphas before smoothing: " << Utotal1 << endl;
         Info << "total Us*alphas after smoothing: " << Utotal2 << endl;
+        Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
+    }
+
+}
+
+void Foam::constDiffCentreSmoothing::fSmoothen(volVectorField& fieldSrc, volScalarField& alpha) const
+{
+    // Create scalar smooth field from virgin scalar smooth field template
+    volVectorField vSmoothField = vSmoothField_;
+    
+	// Create scalar smooth field from virgin scalar smooth field template
+    vSmoothField.dimensions().reset(fieldSrc.dimensions());
+    vSmoothField = fieldSrc;
+    vSmoothField.correctBoundaryConditions();
+    vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    vSmoothField.oldTime()=fieldSrc;
+    vSmoothField.oldTime().correctBoundaryConditions();
+
+    double deltaT = vSmoothField.mesh().time().deltaTValue();
+    DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
+    
+    vector f1(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
+        {
+            f1 += vSmoothField.primitiveFieldRef()[cellI];
+        }
+    }
+
+    // do the smoothing
+    solve
+    (
+        fvm::ddt(vSmoothField)
+       -fvm::laplacian(DT_, vSmoothField)
+    );
+	
+    vector f2(vector::zero);
+
+    if(verbose_) 
+    {
+        forAll(vSmoothField.primitiveFieldRef(), cellI)
+        {
+            f2 += vSmoothField.primitiveFieldRef()[cellI]; //* alphas.primitiveFieldRef()[cellI];
+        }
+    }
+
+    forAll(vSmoothField, cellI)
+    {
+        vSmoothField[cellI] /=alpha[cellI];
+    }
+
+    // get data from working vSmoothField
+    fieldSrc = vSmoothField;
+    fieldSrc.correctBoundaryConditions(); 
+
+    if(verbose_)
+    {
+        reduce(f1,sumOp<vector>());
+        reduce(f2,sumOp<vector>());
+        Info << "total f*alpha before smoothing: " << f1 << endl;
+        Info << "total f*alpha after smoothing: " << f2 << endl;
         Info << "min/max(fieldSrc): " << min(fieldSrc) << tab << max(fieldSrc) << endl;
     }
 

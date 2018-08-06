@@ -117,10 +117,14 @@ public:
         virtual void smoothen(volVectorField&) const=0;
 		
 		virtual void UsSmoothen(volVectorField&, volScalarField&) const;
+
+        virtual void fSmoothen(volVectorField&, volScalarField&) const;
 		
         virtual void smoothenAbsolutField(volScalarField&) const; //for smoothing absolute fields (NOT per m³)
 
         virtual void smoothenAbsolutField(volVectorField&) const; //for smoothing absolute fields (NOT per m³)
+
+        virtual void smoothenAbsolutField(volVectorField&, volScalarField&) const; //for smoothing absolute f fields (NOT per m³)
 		
 		virtual void smoothenReferenceField(volVectorField&) const=0;
 };

@@ -104,7 +104,7 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
 
                 voidfractionNext_[cellI] -= volume/cellVol;               // alpha = 1 - epsilon_s 
 
-                particlefractionNext_.primitiveFieldRef()[cellI] += volume/cellVol;				
+                particlefractionNext_[cellI] += volume/cellVol;				
 
                 // if(index==0 && alphaLimited_) Info<<"alpha limited to" <<alphaMin_<<endl;
 

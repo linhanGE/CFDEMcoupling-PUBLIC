@@ -779,7 +779,6 @@ bool Foam::cfdemCloud::evolve
             clockM().start(20,"setVectorAverage");
             setVectorAverages();
 
-
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
             smoothingM().smoothen(voidFractionM().voidFractionNext());
@@ -924,14 +923,14 @@ bool Foam::cfdemCloud::diffusionEvolve
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
             setUnsmoothedUsbyAlphas();            // by this function, UsNext = Us * alphas (unsmoothed)
-
+          
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
 			
 			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
-			smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); 
-			
+            smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
+            	
             clockM().stop("setVectorAverage");
         }
         
@@ -948,7 +947,16 @@ bool Foam::cfdemCloud::diffusionEvolve
 
         // update voidFractionField
         setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
+              
+        if(dataExchangeM().couplingStep() < 2)
+        {
+            alpha.oldTime() = alpha; // supress volume src
+            alpha.oldTime().correctBoundaryConditions();
+        }
         alpha.correctBoundaryConditions();
+
+        // calc ddt(voidfraction)
+        calcDdtVoidfraction(alpha,Us);
         
         // update mean particle velocity Field
         Us = averagingM().UsInterp();
