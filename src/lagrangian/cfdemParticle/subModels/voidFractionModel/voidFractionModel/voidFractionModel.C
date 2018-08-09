@@ -109,6 +109,19 @@ voidFractionModel::voidFractionModel
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
 		zeroGradientFvPatchScalarField::typeName
     ),
+    alphaG_
+    (   IOobject
+        (
+            "alphaG_",
+            sm.mesh().time().timeName(),
+            sm.mesh(),
+            IOobject::READ_IF_PRESENT,//MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        sm.mesh(),
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
+		zeroGradientFvPatchScalarField::typeName
+    ),
     cellsPerParticle_(NULL),
     maxCellsPerParticle_(1),
     weight_(1.),
@@ -189,6 +202,11 @@ void Foam::voidFractionModel::resetParticleFractions() const
 {
 	particlefractionPrev_ == particlefractionNext_;
 	particlefractionNext_ == dimensionedScalar("zero", particlefractionNext_.dimensions(), 0.);
+}
+
+void Foam::voidFractionModel::resetAlphaG() const
+{
+	alphaG_ == dimensionedScalar("zero", particlefractionNext_.dimensions(), 0.);
 }
 
 /*void Foam::voidFractionModel::undoVoidFractions(double**const& mask) const

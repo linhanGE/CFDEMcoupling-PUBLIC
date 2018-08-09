@@ -35,7 +35,7 @@ Author
 
 #include "error.H"
 
-#include "diffCentreVoidFraction.H"
+#include "bubbleCentreVoidFraction.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -45,12 +45,12 @@ namespace Foam
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(diffCentreVoidFraction, 0);
+defineTypeNameAndDebug(bubbleCentreVoidFraction, 0);
 
 addToRunTimeSelectionTable
 (
     voidFractionModel,
-    diffCentreVoidFraction,
+    bubbleCentreVoidFraction,
     dictionary
 );
 
@@ -58,41 +58,45 @@ addToRunTimeSelectionTable
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 // Construct from components
-diffCentreVoidFraction::diffCentreVoidFraction
+bubbleCentreVoidFraction::bubbleCentreVoidFraction
 (
     const dictionary& dict,
     cfdemCloud& sm
 )
 :
     voidFractionModel(dict,sm),
-    propsDict_(dict.subDict(typeName + "Props"))
+    propsDict_(dict.subDict(typeName + "Props")),
+    rhoG_(readScalar(propsDict_.lookup("gasDensity"))),
 {
     checkWeightNporosity(propsDict_);
-    if(porosity()!=1) FatalError << "porosity not used in diffCentreVoidFraction" << abort(FatalError);
+    if(porosity()!=1) FatalError << "porosity not used in bubbleCentreVoidFraction" << abort(FatalError);
 }
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-diffCentreVoidFraction::~diffCentreVoidFraction()
+bubbleCentreVoidFraction::~bubbleCentreVoidFraction()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& voidfractions,double**& particleWeights,double**& particleVolumes,double**& particleV) const
+void bubbleCentreVoidFraction::setvoidFraction(double** const& mask,double**& voidfractions,double**& particleWeights,double**& particleVolumes,double**& particleV) const
 {
     reAllocArrays();
 
     scalar radius(-1);
     scalar volume(0);
     scalar cellVol(0);
+    scalar rhop(0);
     scalar scaleVol= weight();
 
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
             particleWeights[index][0]=0;
             cellsPerParticle_[index][0]=1;
+
+            rhop = particleCloud_.Density(index);
 
             label cellI = particleCloud_.cellIDs()[index][0];
 
@@ -102,24 +106,26 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                 radius = particleCloud_.radius(index);
                 volume = 4.188790205*radius*radius*radius*scaleVol;
 
-                // store volume for each particle
-                particleVolumes[index][0] = volume/cellVol;               // in diffusion method, this should be volume fraction,pass to setVoidFraction
+                // in diffusion method, this should be volume fraction,pass to setVoidFraction
+                particleVolumes[index][0] = volume/cellVol; 
+
                 particleV[index][0] = volume;
 
-                particlefractionNext_[cellI] += volume/cellVol;				
+                if (rhop < rhoG_*100)
+                    alphaG_[cellI] += volume/cellVol;                   // here, alphaG_ represents the bubble volume fraction 
 
+                particlefractionNext_[cellI] += volume/cellVol;			// particle volume fraction plus bubble volume fraction
+ 
                 // store cellweight for each particle  - this should not live here
                 particleWeights[index][0] = 1;
             }
     }
-    // particlefractionNext_.correctBoundaryConditions();
-
     // bring voidfraction from Eulerian Field to particle array
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
         label cellID = particleCloud_.cellIDs()[index][0];
 
-        voidfractions[index][0] = -1;
+        voidfractions[index][0] = 0;
     }
 }
 

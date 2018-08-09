@@ -327,7 +327,7 @@ bool Foam::twoWayMPI::couple(int i) const
                 }
             }
             // no model with exact timing exists
-            else
+            else       // *****************************//
             {
                 forAll(particleCloud_.liggghtsCommandModelList(),i)
                 {
@@ -338,7 +338,7 @@ bool Foam::twoWayMPI::couple(int i) const
                         {
                             const char* command = particleCloud_.liggghtsCommand()[i]().command(j);
                             Info << "Executing command: '"<< command <<"'"<< endl;
-                            lmp->input->one(command);
+                            lmp->input->one(command); // process a single input command in str
                         }
                     }
                 }

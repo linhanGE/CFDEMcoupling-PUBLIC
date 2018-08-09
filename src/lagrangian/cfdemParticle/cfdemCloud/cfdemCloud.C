@@ -571,6 +571,11 @@ void Foam::cfdemCloud::resetParticleFraction()
 	cfdemCloud::voidFractionM().resetParticleFractions();
 }
 
+void Foam::cfdemCloud::resetAlphaG()
+{
+	cfdemCloud::voidFractionM().resetAlphaG();
+}
+
 void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 {
     alpha = cfdemCloud::voidFractionM().voidFractionInterp();
@@ -579,6 +584,12 @@ void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
 {
 	alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
+}
+
+void Foam::cfdemCloud::setAlphaGas(volScalarField& alpha, volScalarField& alphaG)
+{
+	alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
+    alphaG = cfdemCloud::voidFractionM().alphaG();
 }
 
 void Foam::cfdemCloud::setParticleForceField()
@@ -922,14 +933,14 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            setUnsmoothedUsbyAlphas();            // by this function, UsNext = Us * alphas (unsmoothed)
+            if (useDDTvoidfraction_!=word("a")) setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
           
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
 			
 			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
-            smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
+            if (useDDTvoidfraction_!=word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
             	
             clockM().stop("setVectorAverage");
         }
@@ -962,6 +973,149 @@ bool Foam::cfdemCloud::diffusionEvolve
         Us = averagingM().UsInterp();
         Us.correctBoundaryConditions();
 
+        clockM().stop("interpolateEulerFields");
+        //============================================
+
+        if(doCouple)
+        {
+            // set particles forces
+            clockM().start(21,"setForce");
+            if(verbose_) Info << "- setForce(forces_)" << endl;
+            setForces();                // calculate based on the latest Us and voidfraction,but old U
+            if(verbose_) Info << "setForce done." << endl;
+            calcMultiphaseTurbulence();
+            if(verbose_) Info << "calcMultiphaseTurbulence done." << endl;
+            clockM().stop("setForce");
+
+            // get next force field
+            clockM().start(22,"setParticleForceField");
+            if(verbose_) Info << "- setParticleForceField()" << endl;
+            setParticleForceField();
+            if(verbose_) Info << "- setParticleForceField done." << endl;
+            clockM().stop("setParticleForceField");
+
+            // write DEM data
+            if(verbose_) Info << " -giveDEMdata()" << endl;
+            clockM().start(23,"giveDEMdata");
+            giveDEMdata();
+            clockM().stop("giveDEMdata");
+
+            dataExchangeM().couple(1);
+        }//end dataExchangeM().couple()
+
+
+        if(verbose_){
+            #include "debugInfo.H"
+        }
+
+        clockM().start(25,"dumpDEMdata");
+        // do particle IO
+        IOM().dumpDEMdata();
+        clockM().stop("dumpDEMdata");
+
+    }//end ignore
+    return doCouple;
+}
+
+bool Foam::cfdemCloud::bubbleEvolve
+(
+    volScalarField& alpha,
+    volScalarField& alphaG,
+	volVectorField& Us,
+    volVectorField& U
+)
+{
+    numberOfParticlesChanged_ = false;
+    arraysReallocated_=false;
+    bool doCouple=false;
+
+    if(!ignore())
+    {
+        if(!writeTimePassed_ && mesh_.time().outputTime()) writeTimePassed_=true;
+        if (dataExchangeM().doCoupleNow())   // couple at first sub CFD time step, if there is only one CFD step doCoupleNow must be true
+        {
+            Info << "\n Coupling..." << endl;
+            dataExchangeM().couple(0);       // coupling step will be added by 1, if doCoupleNow == true, this will be true, LIGGGHTS will be excecuated  if i == 0    *************
+            doCouple=true;                   // force will be calculated for CFD and DEM part
+
+            // reset vol Fields
+            clockM().start(16,"resetVolFields");
+            if(verbose_)
+            {
+                Info << "couplingStep:" << dataExchangeM().couplingStep() 
+                     << "\n- resetVolFields()" << endl;
+            }
+            averagingM().resetVectorAverage(averagingM().UsPrev(),averagingM().UsNext(),false);
+            resetParticleFraction();
+            resetAlphaG();
+            averagingM().resetVectorAverage(forceM(0).expParticleForces(),forceM(0).expParticleForces(),true);
+            averagingM().resetWeightFields();
+            for (int i=0;i<momCoupleModels_.size(); i++)
+                momCoupleM(i).resetMomSourceField();
+            if(verbose_) Info << "resetVolFields done." << endl;
+            clockM().stop("resetVolFields");
+
+            if(verbose_) Info << "- getDEMdata()" << endl;
+            clockM().start(17,"getDEMdata");
+            getDEMdata();
+            clockM().stop("getDEMdata");
+            if(verbose_) Info << "- getDEMdata done." << endl;
+
+            // search cellID of particles
+            clockM().start(18,"findCell");
+            if(verbose_) Info << "- findCell()" << endl;
+            findCells();
+            if(verbose_) Info << "findCell done." << endl;
+            clockM().stop("findCell");
+
+            // set void fraction field
+            clockM().start(19,"setvoidFraction");
+            if(verbose_) Info << "- setvoidFraction()" << endl;
+            setVoidFraction();
+            if(verbose_) Info << "setvoidFraction done." << endl;
+            clockM().stop("setvoidFraction");
+
+             // set average particles velocity field
+            clockM().start(20,"setVectorAverage");
+            if (useDDTvoidfraction_!=word("a")) setUnsmoothedUsbyAlphas(); // by this function, UsNext = Us * alphas (unsmoothed)
+
+            //Smoothen "next" fields            
+            smoothingM().dSmoothing();
+			
+			// get unsmoothed vector field
+			smoothingM().smoothen(voidFractionM().particleFractionNext()); //  smoothing whole volume fraction
+            smoothingM().smoothen(voidFractionM().alphaG());     // smoothing bubble volume fraction
+            if (useDDTvoidfraction_!=word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
+        }
+        
+        //============================================
+        //CHECK JUST TIME-INTERPOATE ALREADY SMOOTHENED VOIDFRACTIONNEXT AND UsNEXT FIELD 
+        //      IMPLICIT FORCE CONTRIBUTION AND SOLVER USE EXACTLY THE SAME AVERAGED
+        //      QUANTITIES AT THE GRID!
+        Info << "\n timeStepFraction() = " << dataExchangeM().timeStepFraction() << endl;
+        if( dataExchangeM().timeStepFraction() > 1.001 || dataExchangeM().timeStepFraction() < -0.001 )
+        {
+            FatalError << "cfdemCloud::dataExchangeM().timeStepFraction() = "<< dataExchangeM().timeStepFraction() <<" must be >1 or <0 : This might be due to the fact that you used a adjustable CFD time step. Please use a fixed CFD time step." << abort(FatalError);
+        }
+        clockM().start(24,"interpolateEulerFields");
+
+        // update voidFractionField
+        setAlphaGas(alpha,alphaG);    // alpha must be passed, cause used in other head file
+              
+        if(dataExchangeM().couplingStep() < 2)
+        {
+            alpha.oldTime() = alpha; // supress volume src
+            alpha.oldTime().correctBoundaryConditions();
+        }
+        alpha.correctBoundaryConditions();
+
+        // calc ddt(voidfraction)
+        calcDdtVoidfraction(alpha,Us);
+
+        // update mean particle velocity Field
+        Us = averagingM().UsInterp();
+        Us.correctBoundaryConditions();
+        
         clockM().stop("interpolateEulerFields");
         //============================================
 

@@ -255,9 +255,13 @@ protected:
 	
 	virtual void resetParticleFraction();
 
+    virtual void resetAlphaG();
+
     virtual void setAlpha(volScalarField&);
 	
 	virtual void setAlphaDiffusion(volScalarField&);
+
+    virtual void setAlphaGas(volScalarField&, volScalarField&);
 
     virtual void setParticleForceField();
 
@@ -557,6 +561,8 @@ public:
         virtual bool evolve(volScalarField&,volVectorField&,volVectorField&);
 		
 		virtual bool diffusionEvolve(volScalarField&,volVectorField&,volVectorField&);
+
+        virtual bool bubbleEvolve(volScalarField&, volScalarField&, volVectorField&,volVectorField&);
 
         virtual bool reAllocArrays() const;
 

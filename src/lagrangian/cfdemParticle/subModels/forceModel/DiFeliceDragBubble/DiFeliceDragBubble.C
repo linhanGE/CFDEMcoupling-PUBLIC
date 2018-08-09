@@ -68,8 +68,14 @@ DiFeliceDragBubble::DiFeliceDragBubble
 	U_(sm.mesh().lookupObject<volVectorField> (velFieldName_)),
 	voidfractionFieldName_(propsDict_.lookup("voidfractionFieldName")),
 	voidfraction_(sm.mesh().lookupObject<volScalarField> (voidfractionFieldName_)),
+    gasfractionFieldName_(propsDict_.lookup("gasfractionFieldName")),
+    gasfraction_(sm.mesh().lookupObject<volScalarField> (gasfractionFieldName_)),
 	UsFieldName_(propsDict_.lookup("granVelFieldName")),
-	UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_))
+	UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
+	alphaGfactor_(readScalar(propsDict_.lookup("alphaGfactor"))),
+	alphaSfactor_(readScalar(propsDict_.lookup("alphaSfactor"))),
+	rhoG_(readScalar(propsDict_.lookup("gasDensity")))
+
 {
 	// suppress particle probe
 	if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -137,6 +143,7 @@ void DiFeliceDragBubble::setForce() const
 	scalar magUr(0);
 	scalar Rep(0);
 	scalar Cd(0);
+	scalar alphaG(0);
 
 	#include "resetVoidfractionInterpolator.H"
 	#include "resetUInterpolator.H"
@@ -148,13 +155,14 @@ void DiFeliceDragBubble::setForce() const
 			drag = vector(0,0,0);
 			dragExplicit = vector(0,0,0);
 			Ufluid =vector(0,0,0);
+			alphaG = gasfraction_[cellI];
 
 			if (cellI > -1) // particle Found
 			{
 				if(forceSubM(0).interpolation())
 				{
 					position = particleCloud_.position(index);
-					voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
+					voidfraction = voidfractionInterpolator_().interpolate(position,cellI) + alphaG;
 					Ufluid = UInterpolator_().interpolate(position,cellI);
 
 					//Ensure interpolated void fraction to be meaningful
@@ -163,14 +171,14 @@ void DiFeliceDragBubble::setForce() const
 					if(voidfraction<0.30) voidfraction = 0.30;
 				}else
 				{
-					voidfraction = voidfraction_[cellI];
+					voidfraction = voidfraction_[cellI] + alphaG;
 					Ufluid = U_[cellI];
 				}
-
-				Us = particleCloud_.velocity(index);
+				
+                Us = particleCloud_.velocity(index);
 				ds = 2*particleCloud_.radius(index);
 				dParcel = ds;
-				rhop = particleCloud_.Density(index); 
+				rhop = particleCloud_.Density(index);
 				forceSubM(0).scaleDia(ds,index); //caution: this fct will scale ds!
 
 				//Update any scalar or vector quantity
@@ -195,19 +203,19 @@ void DiFeliceDragBubble::setForce() const
 
 				if (magUr > 0)
 				{
-					if (rhop > 10)
+					if (rhop > rhoG_)
 					{
 						// calc particle Re Nr
 						Rep = ds*voidfraction*magUr/(nuf+SMALL);
 
 						// calc fluid drag Coeff
-						Cd = sqr(0.63 + 4.8/sqrt(Rep));                         // be careful about the difference between sqr and sqrt
+						Cd = sqr(0.63 + 4.8/sqrt(Rep));    // be careful about the difference between sqr and sqrt
 
 						// calc model coefficient Xi
 						scalar Xi = 3.7 - 0.65 * exp(-sqr(1.5-log10(Rep))/2);
 
 						// calc particle's drag
-						dragCoefficient = 0.125*Cd*rho
+						dragCoefficient = 0.125*Cd*(1-pow(alphaG,alphaGfactor_))*rho
 										 *M_PI
 										 *ds*ds      
 										 *pow(voidfraction,(2-Xi))*magUr;
@@ -223,7 +231,7 @@ void DiFeliceDragBubble::setForce() const
 						Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep);      //drag coefficient from Tomiyama
 						
 						// calc particle's drag
-						dragCoefficient = 0.125*Cd*rho
+						dragCoefficient = 0.125*Cd/(1-pow(1-voidfraction-alphaG,alphaSfactor_))*rho
 										 *M_PI
 										 *ds*ds      
 										 *magUr;

@@ -29,19 +29,21 @@ Description
     and OpenFOAM(R). Note: this code is not part of OpenFOAM(R) (see DISCLAIMER).
 
 Class
-    virtualMassForce
+    bubbleCentreVoidFraction
 
 SourceFiles
-    virtualMassForce.C
+    bubbleCentreVoidFraction.C
+
+Author 
+    Linhan Ge, University of Newcastle
+    linhan.ge@gmail.com
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef virtualMassForce_H
-#define virtualMassForce_H
+#ifndef bubbleCentreVoidFraction_H
+#define bubbleCentreVoidFraction_H
 
-#include "forceModel.H"
-#include "dataExchangeModel.H"
-#include "interpolationCellPoint.H"
+#include "voidFractionModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -49,37 +51,29 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class virtualMassForce Declaration
+                           Class noDrag Declaration
 \*---------------------------------------------------------------------------*/
 
-class virtualMassForce
+class bubbleCentreVoidFraction
 :
-    public forceModel
+    public voidFractionModel
 {
+
 private:
-    dictionary propsDict_;
+        dictionary propsDict_;
 
-    word velFieldName_;
-
-    const volVectorField& U_;
-
-    word phiFieldName_;
-
-    const surfaceScalarField& phi_;
-
-    mutable double Cadd_;                  //indicator to split calculation of Urel between CFDEM and LIGGGHTS
-                                           //requires the integration fix to take dv/dt into account!
+        const volVectorField& rhoG_;
 
 public:
 
     //- Runtime type information
-    TypeName("virtualMassForce");
+    TypeName("bubbleCentre");
 
 
     // Constructors
 
         //- Construct from components
-        virtualMassForce
+        bubbleCentreVoidFraction
         (
             const dictionary& dict,
             cfdemCloud& sm
@@ -87,11 +81,11 @@ public:
 
     // Destructor
 
-        ~virtualMassForce();
+        ~bubbleCentreVoidFraction();
 
 
     // Member Functions
-        void setForce() const;
+        void setvoidFraction(double** const& ,double**&, double**&, double**&, double**&) const;
 };
 
 

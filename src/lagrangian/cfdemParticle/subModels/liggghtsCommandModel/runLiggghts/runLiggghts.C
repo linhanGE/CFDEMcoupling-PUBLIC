@@ -119,7 +119,7 @@ bool runLiggghts::runCommand(int couplingStep)
     {
         //change command to  "run xxx pre no"
         if (preNo_ && (couplingStep > firstCouplingStep_))
-            strCommand_=createCommand(command_, particleCloud_.dataExchangeM().couplingInterval(),"pre","no","post","no");
+            strCommand_=createCommand(command_, particleCloud_.dataExchangeM().couplingInterval(),"pre","no","post","no");   // run couplingInterval pre no post no
         else
             strCommand_=createCommand(command_, particleCloud_.dataExchangeM().couplingInterval());
     }else strCommand_=createCommand(command_, 0);

@@ -71,6 +71,8 @@ protected:
 		
 		mutable volScalarField particlefractionNext_;
 
+        mutable volScalarField alphaG_;
+
         mutable double ** cellsPerParticle_;
 
         int maxCellsPerParticle_;
@@ -144,6 +146,8 @@ public:
 
         inline volScalarField& particleFractionNext()const { return particlefractionNext_; }
 
+        inline volScalarField& alphaG()const { return alphaG_; }
+
         inline scalar weight()const { return weight_; }
 
         inline scalar porosity()const { return porosity_; }
@@ -157,6 +161,8 @@ public:
         void resetVoidFractions() const;
 		
 		void resetParticleFractions() const;
+
+        void resetAlphaG() const;
 
         //void undoVoidFractions(double**const&) const;
 
