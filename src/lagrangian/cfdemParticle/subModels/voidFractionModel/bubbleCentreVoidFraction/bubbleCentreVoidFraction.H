@@ -62,7 +62,7 @@ class bubbleCentreVoidFraction
 private:
         dictionary propsDict_;
 
-        const volVectorField& rhoG_;
+        const scalar rhoG_;
 
 public:
 

@@ -66,7 +66,7 @@ bubbleCentreVoidFraction::bubbleCentreVoidFraction
 :
     voidFractionModel(dict,sm),
     propsDict_(dict.subDict(typeName + "Props")),
-    rhoG_(readScalar(propsDict_.lookup("gasDensity"))),
+    rhoG_(readScalar(propsDict_.lookup("gasDensity")))
 {
     checkWeightNporosity(propsDict_);
     if(porosity()!=1) FatalError << "porosity not used in bubbleCentreVoidFraction" << abort(FatalError);

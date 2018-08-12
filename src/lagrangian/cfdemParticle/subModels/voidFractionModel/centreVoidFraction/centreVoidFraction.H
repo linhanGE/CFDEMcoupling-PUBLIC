@@ -60,7 +60,7 @@ private:
 
         const scalar alphaMin_;          //NP min value of voidFraction
 
-	mutable bool alphaLimited_;
+	    mutable bool alphaLimited_;
 
 public:
 
