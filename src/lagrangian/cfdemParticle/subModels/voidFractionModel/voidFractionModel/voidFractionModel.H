@@ -71,7 +71,7 @@ protected:
 		
 		mutable volScalarField particlefractionNext_;
 
-        mutable volScalarField alphaG_;
+        mutable volScalarField alphaGNext_;
 
         mutable double ** cellsPerParticle_;
 
@@ -146,7 +146,7 @@ public:
 
         inline volScalarField& particleFractionNext()const { return particlefractionNext_; }
 
-        inline volScalarField& alphaG()const { return alphaG_; }
+        inline volScalarField& alphaGNext()const { return alphaGNext_; }
 
         inline scalar weight()const { return weight_; }
 

@@ -64,7 +64,7 @@ voidFractionModel::voidFractionModel
             sm.mesh().time().timeName(),
             sm.mesh(),
             IOobject::READ_IF_PRESENT,//MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         sm.mesh().lookupObject<volScalarField> ("voidfraction")
         /*sm.mesh(),
@@ -77,7 +77,7 @@ voidFractionModel::voidFractionModel
             sm.mesh().time().timeName(),
             sm.mesh(),
             IOobject::READ_IF_PRESENT,//MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         sm.mesh().lookupObject<volScalarField> ("voidfraction")
         /*sm.mesh(),
@@ -90,7 +90,7 @@ voidFractionModel::voidFractionModel
             sm.mesh().time().timeName(),
             sm.mesh(),
             IOobject::READ_IF_PRESENT,//MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         sm.mesh(),
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),    // since fraction will automatically calculate before running CFD
@@ -103,20 +103,20 @@ voidFractionModel::voidFractionModel
             sm.mesh().time().timeName(),
             sm.mesh(),
             IOobject::READ_IF_PRESENT,//MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         sm.mesh(),
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
 		zeroGradientFvPatchScalarField::typeName
     ),
-    alphaG_
+    alphaGNext_
     (   IOobject
         (
-            "alphaG_",
+            "alphaGNext",
             sm.mesh().time().timeName(),
             sm.mesh(),
             IOobject::READ_IF_PRESENT,//MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         sm.mesh(),
         dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
@@ -206,7 +206,7 @@ void Foam::voidFractionModel::resetParticleFractions() const
 
 void Foam::voidFractionModel::resetAlphaG() const
 {
-	alphaG_ == dimensionedScalar("zero", particlefractionNext_.dimensions(), 0.);
+	alphaGNext_ == dimensionedScalar("zero", alphaGNext_.dimensions(), 0.);
 }
 
 /*void Foam::voidFractionModel::undoVoidFractions(double**const& mask) const

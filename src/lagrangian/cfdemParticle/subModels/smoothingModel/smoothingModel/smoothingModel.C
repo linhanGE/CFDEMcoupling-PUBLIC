@@ -69,7 +69,8 @@ Foam::smoothingModel::smoothingModel
             IOobject::NO_WRITE
         ),
         particleCloud_.mesh(),
-        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero)
+        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
+        zeroGradientFvPatchScalarField::typeName
     ),
     sSmoothField_
     (   
@@ -82,7 +83,8 @@ Foam::smoothingModel::smoothingModel
             IOobject::NO_WRITE
         ),
         particleCloud_.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
+        zeroGradientFvPatchScalarField::typeName
     )
 {}
 

@@ -112,7 +112,7 @@ void bubbleCentreVoidFraction::setvoidFraction(double** const& mask,double**& vo
                 particleV[index][0] = volume;
 
                 if (rhop < rhoG_*100)
-                    alphaG_[cellI] += volume/cellVol;                   // here, alphaG_ represents the bubble volume fraction 
+                    alphaGNext_[cellI] += volume/cellVol;                   // here, alphaG_ represents the bubble volume fraction 
 
                 particlefractionNext_[cellI] += volume/cellVol;			// particle volume fraction plus bubble volume fraction
  

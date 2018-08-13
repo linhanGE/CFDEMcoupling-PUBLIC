@@ -589,7 +589,7 @@ void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
 void Foam::cfdemCloud::setAlphaGas(volScalarField& alpha, volScalarField& alphaG)
 {
 	alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
-    alphaG = cfdemCloud::voidFractionM().alphaG();
+    alphaG = cfdemCloud::voidFractionM().alphaGNext();
 }
 
 void Foam::cfdemCloud::setParticleForceField()
@@ -1084,7 +1084,7 @@ bool Foam::cfdemCloud::bubbleEvolve
 			
 			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext()); //  smoothing whole volume fraction
-            smoothingM().smoothen(voidFractionM().alphaG());     // smoothing bubble volume fraction
+            smoothingM().smoothen(voidFractionM().alphaGNext());     // smoothing bubble volume fraction
             if (useDDTvoidfraction_!=word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
         }
         
