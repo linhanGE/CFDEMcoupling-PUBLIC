@@ -578,7 +578,7 @@ void Foam::cfdemCloud::resetAlphaG()
 
 void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 {
-    alpha = cfdemCloud::voidFractionM().voidFractionInterp();
+    alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
 }
 
 void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
@@ -757,7 +757,8 @@ bool Foam::cfdemCloud::evolve
                      << "\n- resetVolFields()" << endl;
             }
             averagingM().resetVectorAverage(averagingM().UsPrev(),averagingM().UsNext(),false);
-            resetVoidFraction();
+            // resetVoidFraction();
+            resetParticleFraction();
             averagingM().resetVectorAverage(forceM(0).impParticleForces(),forceM(0).impParticleForces(),true);
             averagingM().resetVectorAverage(forceM(0).expParticleForces(),forceM(0).expParticleForces(),true);
             averagingM().resetWeightFields();
@@ -792,7 +793,8 @@ bool Foam::cfdemCloud::evolve
 
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
-            smoothingM().smoothen(voidFractionM().voidFractionNext());
+            // smoothingM().smoothen(voidFractionM().voidFractionNext());
+            smoothingM().smoothen(voidFractionM().particleFractionNext());
 
             //only smoothen if we use implicit force coupling in cells void of particles
             //because we need unsmoothened Us field to detect cells for explicit 
@@ -933,14 +935,13 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            if (useDDTvoidfraction_!=word("a")) setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
+            if (useDDTvoidfraction_==word("a")) setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
           
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
 			
-			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
-            if (useDDTvoidfraction_!=word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
+            if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
             	
             clockM().stop("setVectorAverage");
         }
@@ -1077,15 +1078,15 @@ bool Foam::cfdemCloud::bubbleEvolve
 
              // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            if (useDDTvoidfraction_!=word("a")) setUnsmoothedUsbyAlphas(); // by this function, UsNext = Us * alphas (unsmoothed)
+            if (useDDTvoidfraction_==word("a")) setUnsmoothedUsbyAlphas(); // by this function, UsNext = Us * alphas (unsmoothed)
 
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
 			
 			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext()); //  smoothing whole volume fraction
-            smoothingM().smoothen(voidFractionM().alphaGNext());     // smoothing bubble volume fraction
-            if (useDDTvoidfraction_!=word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
+            //smoothingM().smoothen(voidFractionM().alphaGNext());     // smoothing bubble volume fraction
+            if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
         }
         
         //============================================

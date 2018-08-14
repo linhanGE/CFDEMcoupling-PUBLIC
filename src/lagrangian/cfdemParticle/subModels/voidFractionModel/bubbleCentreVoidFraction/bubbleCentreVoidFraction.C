@@ -111,8 +111,7 @@ void bubbleCentreVoidFraction::setvoidFraction(double** const& mask,double**& vo
 
                 particleV[index][0] = volume;
 
-                if (rhop < rhoG_*100)
-                    alphaGNext_[cellI] += volume/cellVol;                   // here, alphaG_ represents the bubble volume fraction 
+                if (rhop <= rhoG_*100) alphaGNext_[cellI] += volume/cellVol;   // here, alphaG_ represents the bubble volume fraction 
 
                 particlefractionNext_[cellI] += volume/cellVol;			// particle volume fraction plus bubble volume fraction
  
@@ -120,10 +119,11 @@ void bubbleCentreVoidFraction::setvoidFraction(double** const& mask,double**& vo
                 particleWeights[index][0] = 1;
             }
     }
+    particlefractionNext_.correctBoundaryConditions();
     // bring voidfraction from Eulerian Field to particle array
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
-        label cellID = particleCloud_.cellIDs()[index][0];
+        // label cellID = particleCloud_.cellIDs()[index][0];
 
         voidfractions[index][0] = 0;
     }

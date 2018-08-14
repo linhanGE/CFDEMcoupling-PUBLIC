@@ -103,7 +103,7 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                 volume = 4.188790205*radius*radius*radius*scaleVol;
 
                 // store volume for each particle
-                particleVolumes[index][0] = volume/cellVol;               // in diffusion method, this should be volume fraction,pass to setVoidFraction
+                particleVolumes[index][0] = volume/cellVol;           // in diffusion method, this should be volume fraction,pass to setVoidFraction
                 particleV[index][0] = volume;
 
                 particlefractionNext_[cellI] += volume/cellVol;				
@@ -112,12 +112,12 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                 particleWeights[index][0] = 1;
             }
     }
-    // particlefractionNext_.correctBoundaryConditions();
+    particlefractionNext_.correctBoundaryConditions();
 
     // bring voidfraction from Eulerian Field to particle array
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
-        label cellID = particleCloud_.cellIDs()[index][0];
+        // label cellID = particleCloud_.cellIDs()[index][0];
 
         voidfractions[index][0] = -1;
     }

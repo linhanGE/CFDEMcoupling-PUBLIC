@@ -162,7 +162,7 @@ void DiFeliceDragBubble::setForce() const
 				if(forceSubM(0).interpolation())
 				{
 					position = particleCloud_.position(index);
-					voidfraction = voidfractionInterpolator_().interpolate(position,cellI) + alphaG;
+					voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
 					Ufluid = UInterpolator_().interpolate(position,cellI);
 
 					//Ensure interpolated void fraction to be meaningful
@@ -171,7 +171,7 @@ void DiFeliceDragBubble::setForce() const
 					if(voidfraction<0.30) voidfraction = 0.30;
 				}else
 				{
-					voidfraction = voidfraction_[cellI] + alphaG;
+					voidfraction = voidfraction_[cellI];
 					Ufluid = U_[cellI];
 				}
 				
@@ -209,36 +209,33 @@ void DiFeliceDragBubble::setForce() const
 						Rep = ds*voidfraction*magUr/(nuf+SMALL);
 
 						// calc fluid drag Coeff
-						Cd = sqr(0.63 + 4.8/sqrt(Rep));    // be careful about the difference between sqr and sqrt
+						Cd = sqr(0.63 + 4.8/sqrt(Rep))*(1-pow(alphaG,alphaGfactor_));    // be careful about the difference between sqr and sqrt
 
 						// calc model coefficient Xi
 						scalar Xi = 3.7 - 0.65 * exp(-sqr(1.5-log10(Rep))/2);
 
 						// calc particle's drag
-						dragCoefficient = 0.125*Cd*(1-pow(alphaG,alphaGfactor_))*rho
+						dragCoefficient = 0.125*Cd*rho
 										 *M_PI
 										 *ds*ds      
 										 *pow(voidfraction,(2-Xi))*magUr;
-
-						if (modelType_=="B")
-							dragCoefficient /= voidfraction;
 					} else
 					{
 						// calc particle Re Nr
 						Rep = ds*magUr/(nuf+SMALL);
 						
 						// calc fluid drag Coeff
-						Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep);      //drag coefficient from Tomiyama
+						Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep)/(1-pow(1-voidfraction-alphaG,alphaSfactor_));      //drag coefficient from Tomiyama
 						
 						// calc particle's drag
-						dragCoefficient = 0.125*Cd/(1-pow(1-voidfraction-alphaG,alphaSfactor_))*rho
+						dragCoefficient = 0.125*Cd*rho
 										 *M_PI
 										 *ds*ds      
 										 *magUr;
-						if (modelType_=="B")
-							dragCoefficient /= voidfraction;
 					}
-						
+					
+					if (modelType_=="B")
+							dragCoefficient /= voidfraction;
 					
 					forceSubM(0).scaleCoeff(dragCoefficient,dParcel,index);
 					drag = dragCoefficient*Ur; //total drag force!
