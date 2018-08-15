@@ -1085,7 +1085,7 @@ bool Foam::cfdemCloud::bubbleEvolve
 			
 			// get unsmoothed vector field
 			smoothingM().smoothen(voidFractionM().particleFractionNext()); //  smoothing whole volume fraction
-            //smoothingM().smoothen(voidFractionM().alphaGNext());     // smoothing bubble volume fraction
+            smoothingM().smoothen(voidFractionM().alphaGNext());     // smoothing bubble volume fraction
             if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
         }
         
