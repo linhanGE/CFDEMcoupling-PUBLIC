@@ -31,16 +31,16 @@ Description
     Di Felice drag law (Zhou et al. (2010), JFM)
 
 Class
-    DiFeliceDragBubble
+    DiFeliceParBubbleDrag
 
 SourceFiles
-    DiFeliceDragBubble.C
+    DiFeliceParBubbleDrag.C
 
 	Modified by Linhan Ge to include Tomiyama bubble drag force.
 \*---------------------------------------------------------------------------*/
 
-#ifndef DiFeliceDrag_H
-#define DiFeliceDrag_H
+#ifndef DiFeliceParBubbleDrag_H
+#define DiFeliceParBubbleDrag_H
 
 #include "forceModel.H"
 #include "interpolationCellPoint.H"
@@ -51,10 +51,10 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class DiFeliceDragBubble Declaration
+                           Class DiFeliceParBubbleDrag Declaration
 \*---------------------------------------------------------------------------*/
 
-class DiFeliceDragBubble
+class DiFeliceParBubbleDrag
 :
     public forceModel
 {
@@ -83,16 +83,18 @@ private:
 
     scalar rhoG_;
 
+    bool SNDrag_;
+
 public:
 
     //- Runtime type information
-    TypeName("DiFeliceDragBubble");
+    TypeName("DiFeliceParBubbleDrag");
 
 
     // Constructors
 
         //- Construct from components
-        DiFeliceDragBubble
+        DiFeliceParBubbleDrag
         (
             const dictionary& dict,
             cfdemCloud& sm
@@ -100,7 +102,7 @@ public:
 
     // Destructor
 
-        ~DiFeliceDragBubble();
+        ~DiFeliceParBubbleDrag();
 
 
     // Member Functions

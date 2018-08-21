@@ -33,7 +33,7 @@ Description
 
 #include "error.H"
 
-#include "DiFeliceDragBubble.H"
+#include "DiFeliceParBubbleDrag.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -43,12 +43,12 @@ namespace Foam
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(DiFeliceDragBubble, 0);
+defineTypeNameAndDebug(DiFeliceParBubbleDrag, 0);
 
 addToRunTimeSelectionTable
 (
 	forceModel,
-	DiFeliceDragBubble,
+	DiFeliceParBubbleDrag,
 	dictionary
 );
 
@@ -56,7 +56,7 @@ addToRunTimeSelectionTable
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 // Construct from components
-DiFeliceDragBubble::DiFeliceDragBubble
+DiFeliceParBubbleDrag::DiFeliceParBubbleDrag
 (
 	const dictionary& dict,
 	cfdemCloud& sm
@@ -74,8 +74,8 @@ DiFeliceDragBubble::DiFeliceDragBubble
 	UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
 	alphaGfactor_(readScalar(propsDict_.lookup("alphaGfactor"))),
 	alphaSfactor_(readScalar(propsDict_.lookup("alphaSfactor"))),
-	rhoG_(readScalar(propsDict_.lookup("gasDensity")))
-
+	rhoG_(readScalar(propsDict_.lookup("gasDensity"))),
+	SNDrag_(false)
 {
 	// suppress particle probe
 	if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -106,18 +106,20 @@ DiFeliceDragBubble::DiFeliceDragBubble
 	// read those switches defined above, if provided in dict
 	for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
 		forceSubM(iFSub).readSwitches();
+
+	if (propsDict_.found("SchillerNaumann")) SNDrag_=true;
 }
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-DiFeliceDragBubble::~DiFeliceDragBubble()
+DiFeliceParBubbleDrag::~DiFeliceParBubbleDrag()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void DiFeliceDragBubble::setForce() const
+void DiFeliceParBubbleDrag::setForce() const
 {
 	const volScalarField& nufField = forceSubM(0).nuField();
 	const volScalarField& rhoField = forceSubM(0).rhoField();
@@ -225,16 +227,23 @@ void DiFeliceDragBubble::setForce() const
 						Rep = ds*magUr/(nuf+SMALL);
 						
 						// in case (1-voidfraction-alphaG) < 0
-						if ((1-voidfraction-alphaG) > 0)
+						if (SNDrag_)
 						    // calc fluid drag Coeff
-						    Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep)/(1-pow(1-voidfraction-alphaG,alphaSfactor_));      //drag coefficient from Tomiyama
+						    Cd = max(0.44,24.0/Rep*(1.0+0.15*pow(Rep,0.687)));  //drag coefficient from SchillerNaumann   
 						else 
-						    Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep);
-						// calc particle's drag
-						dragCoefficient = 0.125*Cd*rho
-										 *M_PI
-										 *ds*ds      
-										 *magUr;
+						    Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep);    //drag coefficient from Tomiyama
+
+						if ((1-voidfraction-alphaG) > 0)
+						    // calc particle's drag
+						    dragCoefficient = 0.125*Cd/(1-pow(1-voidfraction-alphaG,alphaSfactor_))*rho
+										     *M_PI
+										     *ds*ds      
+										     *magUr;
+						else
+						    dragCoefficient = 0.125*Cd*rho
+										     *M_PI
+										     *ds*ds      
+										     *magUr;
 					}
 					
 					if (modelType_=="B")
