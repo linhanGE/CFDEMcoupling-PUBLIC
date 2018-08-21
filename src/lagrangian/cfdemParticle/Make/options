@@ -23,6 +23,9 @@ EXE_INC = \
     -I$(LIB_SRC)/OpenFOAM/containers/HashTables/labelHashSet \
     -I$(CFDEM_LIGGGHTS_SRC_DIR) \
     -I$(CFDEM_SRC_DIR)/cfdTools \
+    -I$(LIB_SRC)/sampling/lnInclude \
+    -I$(LIB_SRC)/triSurface/lnInclude \
+    -I$(LIB_SRC)/dynamicMesh/lnInclude
 
 LIB_LIBS = \
      $(PLIBS) \
@@ -33,4 +36,7 @@ LIB_LIBS = \
     -llagrangian \
     -Wl,--whole-archive -l$(CFDEM_LIGGGHTS_LIB_NAME) -Wl,--no-whole-archive \
      $(CFDEM_ADD_LIB_PATHS) \
-     $(CFDEM_ADD_STATICLIBS) 
+     $(CFDEM_ADD_STATICLIBS) \
+     -lsampling \
+     -ltriSurface \
+     -ldynamicMesh

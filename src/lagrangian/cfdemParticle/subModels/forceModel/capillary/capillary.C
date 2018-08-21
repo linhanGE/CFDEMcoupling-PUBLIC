@@ -63,18 +63,32 @@ capillary::capillary
     propsDict_(dict.subDict(typeName + "Props")),
     primaryPhaseFieldName_(propsDict_.lookup("primaryPhaseFieldName")),
     alpha_(sm.mesh().lookupObject<volScalarField> (primaryPhaseFieldName_)),
-    /*gradAlphaName_(propsDict_.lookup("gradAlphaName")),
-    gradAlpha_(sm.mesh().lookupObject<volVectorField> (gradAlphaName_)),*/
     sigma_(readScalar(propsDict_.lookup("sigma"))),
     theta_(readScalar(propsDict_.lookup("theta"))),
-    alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
-    deltaAlphaIn_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
-    deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
+    alphaCentre_(readScalar(propsDict_.lookup("alphaCentre"))),
+    decayFactor_(readScalar(propsDict_.lookup("decayFactor"))),
     C_(1.0),
     interpolation_(false)
+    /*alpha05Dict
+    (
+        IOobject
+        (
+            "alpha05Dict",
+            sm.mesh().time().constant(),
+            sm.mesh(),
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    ),
+    alpha05
+    (
+        "alpha05",
+        sm.mesh(),
+        alpha05Dict
+    )*/
 {
     if (propsDict_.found("C")) C_=readScalar(propsDict_.lookup("C"));
-
+    
     // init force sub model
     setForceSubModels(propsDict_);
 
@@ -101,23 +115,76 @@ capillary::~capillary()
 
 void capillary::setForce() const
 {
+    // alpha05.update();
+
     volVectorField gradAlpha_ = fvc::grad(alpha_);
     #include "resetAlphaInterpolator.H"
     #include "resetGradAlphaInterpolator.H"
+
+    // const pointField&  alpha05point = alpha05.points();   //points on the surface
+    // faceList surfaceFace = alpha05.faces();               //faces on the surface
+    // pointField centre = alpha05point.Cf();
+
+    // List<vector> centre(surfaceFace.size(),vector(0,0,0));
+    
+    // pointField pp(alpha05point.size(),vector(0,0,0));
+
+    /*forAll(surfaceFace,facei)
+    {    
+        // const face& ll = surfaceFace[facei];  //list of  point label of facei
+        // const pointField& pll = ll.points(alpha05point);
+        // centre[facei] = ll.centre(pll); 
+        // Info << centre[facei] << endl;
+        Info << alpha05.Cf()[facei] << endl;
+    }*/
+    //forAll(alpha05point,iP)
+    //{ 
+        // points[iP] = vector(_coo[iP].x, _coo[iP].y, _coo[iP].z);
+        // Sout << alpha05point[iP] << endl;
+        
+    //}
+
+    /*label pointNo = alpha05point.size();
+    reduce(pointNo,sumOp<label>());
+    Info << pointNo << endl;*/
 
     for(int index = 0;index <  particleCloud_.numberOfParticles(); ++index)
     {
         //if(mask[index][0])
         //{
-            // definition of spherical particle
+            // definition of sphericalparticle
             scalar dp = 2*particleCloud_.radius(index);
             vector position = particleCloud_.position(index);
+ 
+            /*List<vector> pointOnLine;
+            int nuOfPoints = 1e3;
+            pointOnLine.setSize(nuOfPoints, vector(0,0,0)));
+            
+            for (int i=1, i <= nuOfPoints, i++)
+            {
+                pointOnLine(i) = ((cg - position)/1e6*i + position);    
+            }*/ 
+
             label cellI = particleCloud_.cellIDs()[index][0];
+            // vector interfacePoint(0,0,0);
+            // scalar h(0);
 
             if(cellI >-1.0) // particle found on proc domain
             {
                 scalar alphap;
                 vector magGradAlphap;
+                /*for (int i = 1, i<=nuOfPoints,i++)
+                {
+                    alphaPoint = alphaInterpolator_().interpolate(pointOnLine(i),cellI);
+                    if abs( alphaPoint - alphaThreshold_ ) < 1e6
+                    {
+                        interfacePoint = pointOnLine(i);
+                    }
+                }
+                // separate distance between the point and the interface
+                h = sqr((position.x()-interfacePoint.x())*(position.x()-interfacePoint.x())
+                   +(position.y()-interfacePoint.y())*(position.y()-interfacePoint.y())
+                   +(position.z()-interfacePoint.z())*(position.z()-interfacePoint.z()));*/
 
                 if(forceSubM(0).interpolation()) // use intepolated values for alpha (normally off!!!)
                 {
@@ -146,16 +213,12 @@ void capillary::setForce() const
                 vector capillaryForce = Foam::vector(0,0,0);
 
                 // Calculate the capillaryForce (range of alphap needed for stability)
-
-                if ((alphaThreshold_-deltaAlphaIn_) < alphap && alphap < (alphaThreshold_+deltaAlphaOut_))
-                {
-                    Info << "within threshold limits" << endl;
-                    // Calculate estimate attachment force as
-                    // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
-                    scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
-
-                    capillaryForce = -1*magGradAlphap*Fatt*C_* tanh(alphap-alphaThreshold_) /tanh(deltaAlphaIn_);
-                }
+                // Calculate estimate attachment force as
+                // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
+                scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
+                // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
+                capillaryForce = -1*magGradAlphap*Fatt*C_
+                                 * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
 
                 if(forceSubM(0).verbose() && mag(capillaryForce) > 0)
                 {
@@ -191,4 +254,50 @@ void capillary::setForce() const
 
 } // End namespace Foam
 
+// calculate the centre of the bubble
+    /*const volVectorField& centers = mesh().C();
+    scalar sumX = 0;
+    scalar sumY = 0;
+    scalar sumZ = 0;
+    
+    const objectRegistry& db = mesh().thisDb();
+    const dictionary& transportProperties = 
+          db.lookupObject<IOdictionary>
+          (
+            "transportProperties"
+          );
+
+    dictionary alpha2
+    (
+        transportProperties.subDict("air")
+    );
+        
+    dimensionedScalar rhoBubble
+    (
+        "rhoBubble",
+        dimDensity,
+        alpha2.lookup("rho")
+    );
+
+    forAll(centers, I)
+    {
+        if ( alpha_[I] < th && centers[I].y() < ht )
+        {
+            //Mass center
+            sumY    += (1 - alpha_[I])*rhoBubble.value()*vols[I]*centers[I].y();
+            sumX    += (1 - alpha_[I])*rhoBubble.value()*vols[I]*centers[I].x();
+            sumZ    += (1 - alpha_[I])*rhoBubble.value()*vols[I]*centers[I].z();
+            sumMass += (1 - alpha_[I])*rhoBubble.value()*vols[I];
+        }
+    }
+    
+    reduce(sumY, sumOp<scalar>());
+    reduce(sumX, sumOp<scalar>());
+    reduce(sumZ, sumOp<scalar>());
+        
+    scalar cgX = sumX/max(sumMass, SMALL);
+    scalar cgY = sumY/max(sumMass, SMALL);
+    scalar cgZ = sumZ/max(sumMass, SMALL);
+
+    vectro cg(cgX,cgY,cgZ);*/
 // ************************************************************************* //

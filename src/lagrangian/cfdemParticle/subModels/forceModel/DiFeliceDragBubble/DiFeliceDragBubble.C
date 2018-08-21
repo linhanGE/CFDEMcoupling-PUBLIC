@@ -224,9 +224,12 @@ void DiFeliceDragBubble::setForce() const
 						// calc particle Re Nr
 						Rep = ds*magUr/(nuf+SMALL);
 						
-						// calc fluid drag Coeff
-						Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep)/(1-pow(1-voidfraction-alphaG,alphaSfactor_));      //drag coefficient from Tomiyama
-						
+						// in case (1-voidfraction-alphaG) < 0
+						if ((1-voidfraction-alphaG) > 0)
+						    // calc fluid drag Coeff
+						    Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep)/(1-pow(1-voidfraction-alphaG,alphaSfactor_));      //drag coefficient from Tomiyama
+						else 
+						    Cd = min(24/Rep*(1+0.15*pow(Rep,0.687)),72/Rep);
 						// calc particle's drag
 						dragCoefficient = 0.125*Cd*rho
 										 *M_PI

@@ -40,6 +40,7 @@ SourceFiles
 #define capillary_H
 
 #include "forceModel.H"
+#include "sampledIsoSurface.H"
 #include "interpolationCellPoint.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -66,16 +67,17 @@ private:
 
     const scalar theta_;
 
-    const scalar alphaThreshold_;
+    const scalar alphaCentre_;
 
-    const scalar  deltaAlphaIn_;
-
-    const scalar  deltaAlphaOut_;
+    const scalar decayFactor_;
 
     scalar C_; // model constant
 
     bool interpolation_; // use interpolated field values (does not work for fine grids???)
+    
+    // IOdictionary alpha05Dict;
 
+    // mutable sampledIsoSurface alpha05;
 public:
 
     //- Runtime type information
