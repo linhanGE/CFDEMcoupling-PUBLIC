@@ -67,9 +67,11 @@ private:
 
     const scalar theta_;
 
-    const scalar alphaCentre_;
+    const scalar alphaThreshold_;
 
-    const scalar decayFactor_;
+    const scalar  deltaAlphaIn_;
+
+    const scalar  deltaAlphaOut_;
 
     scalar C_; // model constant
 

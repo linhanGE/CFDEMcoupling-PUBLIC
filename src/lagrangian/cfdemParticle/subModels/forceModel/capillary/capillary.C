@@ -65,8 +65,9 @@ capillary::capillary
     alpha_(sm.mesh().lookupObject<volScalarField> (primaryPhaseFieldName_)),
     sigma_(readScalar(propsDict_.lookup("sigma"))),
     theta_(readScalar(propsDict_.lookup("theta"))),
-    alphaCentre_(readScalar(propsDict_.lookup("alphaCentre"))),
-    decayFactor_(readScalar(propsDict_.lookup("decayFactor"))),
+    alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
+    deltaAlphaIn_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
+    deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
     C_(1.0),
     interpolation_(false)
     /*alpha05Dict
@@ -215,10 +216,14 @@ void capillary::setForce() const
                 // Calculate the capillaryForce (range of alphap needed for stability)
                 // Calculate estimate attachment force as
                 // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
+                if ((alphaThreshold_-deltaAlphaIn_) < alphap && alphap < (alphaThreshold_+deltaAlphaOut_))
+                {
                 scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
                 // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
                 capillaryForce = -1*magGradAlphap*Fatt*C_
-                                 * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
+                                 * sin(alphap*M_PI);
+                                 // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
+                }
 
                 if(forceSubM(0).verbose() && mag(capillaryForce) > 0)
                 {
