@@ -220,7 +220,8 @@ void capillary::setForce() const
                 {
                 scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
                 // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
-                capillaryForce = -1*magGradAlphap*Fatt*C_
+                // be careful with the sign gradient points from low pressure to high pressure
+                capillaryForce = magGradAlphap*Fatt*C_ 
                                  * sin(alphap*M_PI);
                                  // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
                 }
