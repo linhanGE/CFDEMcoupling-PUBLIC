@@ -63,13 +63,18 @@ capillary::capillary
     propsDict_(dict.subDict(typeName + "Props")),
     primaryPhaseFieldName_(propsDict_.lookup("primaryPhaseFieldName")),
     alpha_(sm.mesh().lookupObject<volScalarField> (primaryPhaseFieldName_)),
+    velFieldName_(propsDict_.lookup("velFieldName")),
+    U_(sm.mesh().lookupObject<volVectorField> (velFieldName_)),
     sigma_(readScalar(propsDict_.lookup("sigma"))),
     theta_(readScalar(propsDict_.lookup("theta"))),
     alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
     deltaAlphaIn_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
     deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
-    C_(1.0),
-    interpolation_(false)
+    C1_(1.0),
+    C2_(1.0),
+    interpolation_(false),
+    centers(sm.mesh().C()),
+    vols(sm.mesh().V())
     /*alpha05Dict
     (
         IOobject
@@ -88,7 +93,8 @@ capillary::capillary
         alpha05Dict
     )*/
 {
-    if (propsDict_.found("C")) C_=readScalar(propsDict_.lookup("C"));
+    if (propsDict_.found("C1")) C1_=readScalar(propsDict_.lookup("C1"));
+    if (propsDict_.found("C2")) C2_=readScalar(propsDict_.lookup("C2"));
     
     // init force sub model
     setForceSubModels(propsDict_);
@@ -122,6 +128,8 @@ void capillary::setForce() const
     #include "resetAlphaInterpolator.H"
     #include "resetGradAlphaInterpolator.H"
 
+    vector Us(0,0,0);
+
     // const pointField&  alpha05point = alpha05.points();   //points on the surface
     // faceList surfaceFace = alpha05.faces();               //faces on the surface
     // pointField centre = alpha05point.Cf();
@@ -149,6 +157,35 @@ void capillary::setForce() const
     reduce(pointNo,sumOp<label>());
     Info << pointNo << endl;*/
 
+    // sum of U by volume
+    scalar sumUX = 0;
+    scalar sumUY = 0;
+    scalar sumUZ = 0;
+    // sum of volume
+    scalar sumVol = 0;
+
+    forAll(centers, cellI)
+    {
+        if ( alpha_[cellI] < alphaThreshold_)
+        {
+            //Rising Velocity
+            sumUX   += (1 - alpha_[cellI])*vols[cellI]*U_[cellI].x();
+            sumUY   += (1 - alpha_[cellI])*vols[cellI]*U_[cellI].y();
+            sumUZ   += (1 - alpha_[cellI])*vols[cellI]*U_[cellI].z();
+            sumVol  += (1 - alpha_[cellI])*vols[cellI];
+        }
+    }
+    
+    reduce(sumUX, sumOp<scalar>());
+    reduce(sumUY, sumOp<scalar>());
+    reduce(sumUZ, sumOp<scalar>());
+    reduce(sumVol, sumOp<scalar>());
+
+    // rising velocity
+    scalar vx = sumUX/max(sumVol, SMALL);
+    scalar vy = sumUY/max(sumVol, SMALL);
+    scalar vz = sumUZ/max(sumVol, SMALL);
+
     for(int index = 0;index <  particleCloud_.numberOfParticles(); ++index)
     {
         //if(mask[index][0])
@@ -156,7 +193,7 @@ void capillary::setForce() const
             // definition of sphericalparticle
             scalar dp = 2*particleCloud_.radius(index);
             vector position = particleCloud_.position(index);
- 
+            
             /*List<vector> pointOnLine;
             int nuOfPoints = 1e3;
             pointOnLine.setSize(nuOfPoints, vector(0,0,0)));
@@ -174,6 +211,7 @@ void capillary::setForce() const
             {
                 scalar alphap;
                 vector magGradAlphap;
+                Us = particleCloud_.velocity(index);
                 /*for (int i = 1, i<=nuOfPoints,i++)
                 {
                     alphaPoint = alphaInterpolator_().interpolate(pointOnLine(i),cellI);
@@ -210,18 +248,30 @@ void capillary::setForce() const
                     magGradAlphap = a[cellI];
                 }
 
+                // velocity at gradient direction
+                vector Ub(vx,vy,vz); 
+
+                // bubble rising velocity along the gradient direction                
+                vector Ubn = Ub & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // relative velocity at gradient
+                vector Usn = Us & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // relative velocity along the gradient direction
+                vector Urn = Ubn-Usn;
+                // scalar magUr = mag(Ur);
                 // Initialize an capillaryForce vector
                 vector capillaryForce = Foam::vector(0,0,0);
-
+                
                 // Calculate the capillaryForce (range of alphap needed for stability)
                 // Calculate estimate attachment force as
                 // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
                 if ((alphaThreshold_-deltaAlphaIn_) < alphap && alphap < (alphaThreshold_+deltaAlphaOut_))
                 {
-                scalar Fatt =   0.5*M_PI*dp*sigma_*(1-cos(theta_));
+                scalar Fatt = 0.5*M_PI*dp*sigma_*(1-cos(theta_));
                 // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
                 // be careful with the sign, gradient points from low pressure to high pressure
-                capillaryForce = -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
+                // C2 is a damping coefficient
+                capillaryForce = -1*magGradAlphap*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
+                                 // -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
                                  // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
                 }
 

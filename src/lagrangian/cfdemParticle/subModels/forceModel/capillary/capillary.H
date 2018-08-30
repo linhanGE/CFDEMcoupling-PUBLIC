@@ -63,6 +63,10 @@ private:
 
     const volScalarField& alpha_;    // ref to VOF voidfraction
 
+    word velFieldName_;
+    
+    const volVectorField& U_;
+
     const scalar sigma_;
 
     const scalar theta_;
@@ -73,9 +77,15 @@ private:
 
     const scalar  deltaAlphaOut_;
 
-    scalar C_; // model constant
+    scalar C1_; // model constant
+
+    scalar C2_; // damping coefficient
 
     bool interpolation_; // use interpolated field values (does not work for fine grids???)
+
+    const volVectorField& centers;
+
+    const scalarField& vols;
     
     // IOdictionary alpha05Dict;
 
