@@ -128,7 +128,7 @@ void capillary::setForce() const
     #include "resetAlphaInterpolator.H"
     #include "resetGradAlphaInterpolator.H"
 
-    vector Us(0,0,0);
+    // vector Us(0,0,0);
 
     // const pointField&  alpha05point = alpha05.points();   //points on the surface
     // faceList surfaceFace = alpha05.faces();               //faces on the surface
@@ -158,7 +158,7 @@ void capillary::setForce() const
     Info << pointNo << endl;*/
 
     // sum of U by volume
-    scalar sumUX = 0;
+    /*scalar sumUX = 0;
     scalar sumUY = 0;
     scalar sumUZ = 0;
     // sum of volume
@@ -184,7 +184,7 @@ void capillary::setForce() const
     // rising velocity
     scalar vx = sumUX/max(sumVol, SMALL);
     scalar vy = sumUY/max(sumVol, SMALL);
-    scalar vz = sumUZ/max(sumVol, SMALL);
+    scalar vz = sumUZ/max(sumVol, SMALL);*/
 
     for(int index = 0;index <  particleCloud_.numberOfParticles(); ++index)
     {
@@ -211,7 +211,7 @@ void capillary::setForce() const
             {
                 scalar alphap;
                 vector magGradAlphap;
-                Us = particleCloud_.velocity(index);
+                // Us = particleCloud_.velocity(index);
                 /*for (int i = 1, i<=nuOfPoints,i++)
                 {
                     alphaPoint = alphaInterpolator_().interpolate(pointOnLine(i),cellI);
@@ -249,14 +249,14 @@ void capillary::setForce() const
                 }
 
                 // velocity at gradient direction
-                vector Ub(vx,vy,vz); 
+                // vector Ub(vx,vy,vz); 
 
                 // bubble rising velocity along the gradient direction                
-                vector Ubn = Ub & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // vector Ubn = Ub & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
                 // relative velocity at gradient
-                vector Usn = Us & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // vector Usn = Us & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
                 // relative velocity along the gradient direction
-                vector Urn = Ubn-Usn;
+                // vector Urn = Ubn-Usn;
                 // scalar magUr = mag(Ur);
                 // Initialize an capillaryForce vector
                 vector capillaryForce = Foam::vector(0,0,0);
@@ -270,7 +270,8 @@ void capillary::setForce() const
                 // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
                 // be careful with the sign, gradient points from low pressure to high pressure
                 // C2 is a damping coefficient
-                capillaryForce = -1*magGradAlphap*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
+                capillaryForce = -1*magGradAlphap*Fatt*C1_+(alphaThreshold_+deltaAlphaOut_-alphap)/(deltaAlphaIn_+deltaAlphaOut_)*magGradAlphap*Fatt*C2_;
+                                // -1*magGradAlphap*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
                                  // -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
                                  // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
                 }
