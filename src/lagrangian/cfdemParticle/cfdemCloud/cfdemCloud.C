@@ -925,7 +925,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             findCells();
             if(verbose_) Info << "findCell done." << endl;
             clockM().stop("findCell");
-
+            
             // set void fraction field
             clockM().start(19,"setvoidFraction");
             if(verbose_) Info << "- setvoidFraction()" << endl;
@@ -951,6 +951,7 @@ bool Foam::cfdemCloud::diffusionEvolve
         //      IMPLICIT FORCE CONTRIBUTION AND SOLVER USE EXACTLY THE SAME AVERAGED
         //      QUANTITIES AT THE GRID!
         Info << "\n timeStepFraction() = " << dataExchangeM().timeStepFraction() << endl;
+
         if( dataExchangeM().timeStepFraction() > 1.001 || dataExchangeM().timeStepFraction() < -0.001 )
         {
             FatalError << "cfdemCloud::dataExchangeM().timeStepFraction() = "<< dataExchangeM().timeStepFraction() <<" must be >1 or <0 : This might be due to the fact that you used a adjustable CFD time step. Please use a fixed CFD time step." << abort(FatalError);
@@ -959,17 +960,19 @@ bool Foam::cfdemCloud::diffusionEvolve
 
         // update voidFractionField
         setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
-              
-        if(dataExchangeM().couplingStep() < 2)
-        {
-            alpha.oldTime() = alpha; // supress volume src
-            alpha.oldTime().correctBoundaryConditions();
-        }
-        alpha.correctBoundaryConditions();
 
+        if (useDDTvoidfraction_ != word("a"))
+        {
+            if(dataExchangeM().couplingStep() < 2)
+            {
+                alpha.oldTime() = alpha; // supress volume src
+                alpha.oldTime().correctBoundaryConditions();
+            }
+            alpha.correctBoundaryConditions();
+        }
         // calc ddt(voidfraction)
         calcDdtVoidfraction(alpha,Us);
-        
+
         // update mean particle velocity Field
         Us = averagingM().UsInterp();
         Us.correctBoundaryConditions();
@@ -1003,7 +1006,6 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             dataExchangeM().couple(1);
         }//end dataExchangeM().couple()
-
 
         if(verbose_){
             #include "debugInfo.H"

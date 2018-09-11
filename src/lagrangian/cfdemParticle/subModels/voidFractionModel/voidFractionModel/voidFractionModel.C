@@ -265,7 +265,7 @@ double Foam::voidFractionModel::pointInParticle(int index, vector positionCenter
     if(radius>SMALL)
     {
         scalar pointDistSq = magSqr(point - positionCenter);
-        return pointDistSq / (scale*scale*radius*radius) - 1.0;
+        return pointDistSq / (scale*scale*radius*radius) - 1.0; // scale is set as two
     }
     else
     {

@@ -63,9 +63,9 @@ private:
 
     const volScalarField& alpha_;    // ref to VOF voidfraction
 
-    word velFieldName_;
+    // word velFieldName_;
     
-    const volVectorField& U_;
+    // const volVectorField& U_;
 
     const scalar sigma_;
 

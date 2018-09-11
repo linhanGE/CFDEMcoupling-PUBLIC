@@ -265,7 +265,7 @@ void Foam::cfdemCloudIB::setInterFace
             double value = voidFractionM().pointInParticle(par, ParPos, posC, skin);
             if(value <= 0.0)
             {
-                interFace[cellI] = value + 1.0;
+                interFace[cellI] = value + 1.0; // d^2/4r^2
             }
         }
     }
