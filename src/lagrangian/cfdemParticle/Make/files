@@ -91,6 +91,7 @@ $(liggghtsCommandModels)/setDEMGravity/setDEMGravity.C
 $(liggghtsCommandModels)/writeLiggghts/writeLiggghts.C
 
 $(locateModels)/engineSearch/engineSearch.C
+$(locateModels)/engineSearchDyM/engineSearchDyM.C
 $(locateModels)/engineSearchIB/engineSearchIB.C
 $(locateModels)/locateModel/locateModel.C
 $(locateModels)/locateModel/newLocateModel.C

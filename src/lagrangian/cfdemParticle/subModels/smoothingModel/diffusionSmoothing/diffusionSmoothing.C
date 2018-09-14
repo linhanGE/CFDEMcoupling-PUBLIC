@@ -150,7 +150,7 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
 	
 	diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();
-	
+	Info << "bug point 1" << endl;
 	while (diffusionRunTime_.loop())
     {
         if (diffusionRunTime_.timeIndex() == 1)
@@ -165,7 +165,7 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
             solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT, diffWorkField));
         }
     }
-
+    Info << "bug point 2" << endl;
     diffusionTimeCount_[1] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();
 
@@ -176,7 +176,7 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
     {
         diffWorkField.primitiveFieldRef()[cellI]=max(minAlphas_,min(maxAlphas_,diffWorkField.primitiveFieldRef()[cellI]));
     }
-	
+	Info << "bug point 3" << endl;
 	// get data from working diffWorkField - will copy only values at new time
     fieldSrc.primitiveFieldRef() = diffWorkField.primitiveFieldRef();
     diffusionTimeCount_[0] += particleCloud_.mesh().time().elapsedCpuTime() - t0;

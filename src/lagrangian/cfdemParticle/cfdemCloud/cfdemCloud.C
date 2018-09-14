@@ -930,6 +930,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             clockM().start(19,"setvoidFraction");
             if(verbose_) Info << "- setvoidFraction()" << endl;
             setVoidFraction();
+
             if(verbose_) Info << "setvoidFraction done." << endl;
             clockM().stop("setvoidFraction");
 
