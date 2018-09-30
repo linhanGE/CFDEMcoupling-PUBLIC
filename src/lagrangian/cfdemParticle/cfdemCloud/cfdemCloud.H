@@ -130,6 +130,8 @@ protected:
 	
 	mutable double **density_;
 
+    mutable int **type_;
+
     mutable double **voidfractions_;
 
     mutable double **cellIDs_;
@@ -380,11 +382,15 @@ public:
 	   
 	   inline double ** density() const;
 
+       inline int ** type() const;
+
        inline double ** voidfractions() const;
 
        inline void get_radii(double**&) const;
 	   
 	   inline void get_density(double**&) const;
+
+       inline void get_type(int**&) const;
 
        inline double ** cellIDs() const;
 
@@ -399,6 +405,8 @@ public:
        inline scalar radius(int);
 	   
 	   inline scalar Density(int);
+
+       inline label Type(int);
 
        virtual inline double d(int);
 

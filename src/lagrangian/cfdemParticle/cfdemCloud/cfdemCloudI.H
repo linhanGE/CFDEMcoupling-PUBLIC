@@ -182,6 +182,11 @@ inline double ** cfdemCloud::density() const
     return density_;
 }
 
+inline int ** cfdemCloud::type() const
+{
+    return type_;
+}
+
 inline double ** cfdemCloud::voidfractions() const
 {
     return voidfractions_;
@@ -199,6 +204,11 @@ inline void cfdemCloud::get_radii(double **& values) const
 inline void cfdemCloud::get_density(double **& values) const
 {
     values=density_;
+}
+
+inline void cfdemCloud::get_type(int **& values) const
+{
+    values=type_;
 }
 
 inline double ** cfdemCloud::cellIDs() const
@@ -237,6 +247,11 @@ inline scalar cfdemCloud::radius(int index)
 inline scalar cfdemCloud::Density(int index)
 {
     return density_[index][0];
+}
+
+inline label cfdemCloud::Type(int index)
+{
+    return type_[index][0];
 }
 
 inline double cfdemCloud::d(int index)

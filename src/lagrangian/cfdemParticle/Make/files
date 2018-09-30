@@ -66,6 +66,7 @@ $(forceModels)/particleCellVolume/particleCellVolume.C
 $(forceModels)/particleVolume/particleVolume.C
 $(forceModels)/scalarGeneralExchange/scalarGeneralExchange.C
 $(forceModels)/SchillerNaumannDrag/SchillerNaumannDrag.C
+$(forceModels)/StokesDrag/StokesDrag.C
 $(forceModels)/ShirgaonkarIB/ShirgaonkarIB.C
 $(forceModels)/virtualMassForce/virtualMassForce.C
 $(forceModels)/viscForce/viscForce.C
