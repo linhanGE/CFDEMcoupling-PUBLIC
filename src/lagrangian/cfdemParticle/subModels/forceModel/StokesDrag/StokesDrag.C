@@ -126,7 +126,7 @@ void StokesDrag::setForce() const
     vector drag(0,0,0);
     vector dragExplicit(0,0,0);
   	scalar dragCoefficient(0);
-    label cellI=0;
+    label  cellI=0;
     vector Us(0,0,0);
     vector Ur(0,0,0);
     scalar ds(0);
@@ -166,7 +166,7 @@ void StokesDrag::setForce() const
 
             Us = particleCloud_.velocity(index);
             ds = 2*particleCloud_.radius(index);
-            type = 2*particleCloud_.Type(index);
+            type = particleCloud_.Type(index);
             f = f_[type];
             dParcel = ds;
             forceSubM(0).scaleDia(ds,index); //caution: this fct will scale ds!
