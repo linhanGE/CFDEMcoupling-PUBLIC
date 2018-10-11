@@ -214,8 +214,10 @@ void StokesDrag::setForce() const
                    +(position.y()-bubbleCentre_.y())*(position.y()-bubbleCentre_.y())
                    +(position.z()-bubbleCentre_.z())*(position.z()-bubbleCentre_.z()));
                        
-                if (d < rpb_)
-                    drag = f*dragCoefficient*Ur;
+                if (d < rpb_) {
+                    dragCoefficient = 0.5*f*M_PI*nuf*rho*ds; 
+                    drag = dragCoefficient*Ur;
+                }
                 else 
                     drag = dragCoefficient*Ur;
 
