@@ -119,6 +119,7 @@ Foam::cfdemCloud::cfdemCloud
     imExSplitFactor_(1.0),
     treatVoidCellsAsExplicitForce_(false),
     useDDTvoidfraction_("off"),
+    UsmoothFlag_(false),
     ddtVoidfraction_
     (   
         IOobject
@@ -325,6 +326,9 @@ Foam::cfdemCloud::cfdemCloud
     }
     else        
         Info << "ignoring ddt(voidfraction)" << endl;
+    
+    if (couplingProperties_.found("Usmooth"))
+        UsmoothFlag_=Switch(couplingProperties_.lookup("Usmooth"));
 
     momCoupleModel_ = new autoPtr<momCoupleModel>[momCoupleModels_.size()];
     for (int i=0;i<momCoupleModels_.size();i++)
@@ -882,7 +886,8 @@ bool Foam::cfdemCloud::diffusionEvolve
 (
     volScalarField& alpha,
 	volVectorField& Us,
-    volVectorField& U
+    volVectorField& U,
+    volVectorField& Usmooth
 )
 {
     numberOfParticlesChanged_ = false;
@@ -944,9 +949,9 @@ bool Foam::cfdemCloud::diffusionEvolve
             smoothingM().dSmoothing();
 			
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
-            if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext());
-            	
-            clockM().stop("setVectorAverage");
+            if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); // divided by smoothed alphas
+
+           clockM().stop("setVectorAverage");
         }
         
         //============================================
@@ -964,6 +969,16 @@ bool Foam::cfdemCloud::diffusionEvolve
         // update voidFractionField
         setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
 
+        if (UsmoothFlag_) 
+        {
+            Usmooth.primitiveFieldRef() *= alpha.primitiveFieldRef();
+            smoothingM().smoothen(Usmooth);
+            Usmooth.primitiveFieldRef() /= alpha.primitiveFieldRef();
+            Usmooth.correctBoundaryConditions();
+        } 
+        else 
+            Usmooth = U;
+        
         if (useDDTvoidfraction_ != word("a"))
         {
             if(dataExchangeM().couplingStep() < 2)

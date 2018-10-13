@@ -87,7 +87,7 @@ StokesDrag::StokesDrag
 
     // init force sub model
     setForceSubModels(propsDict_);
-
+    
     // define switches which can be read from dict
     forceSubM(0).setSwitchesList(0,true); // activate treatExplicit switch
     forceSubM(0).setSwitchesList(2,true); // activate implDEM switch

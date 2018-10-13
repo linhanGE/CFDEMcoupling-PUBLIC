@@ -180,6 +180,8 @@ protected:
 
     mutable word useDDTvoidfraction_;
 
+    bool UsmoothFlag_;
+
     mutable volScalarField ddtVoidfraction_;
 
     //Variable used to de-activate mirroring across periodic boundary conditions 
@@ -568,7 +570,7 @@ public:
       // write cfdemCloud internal data
         virtual bool evolve(volScalarField&,volVectorField&,volVectorField&);
 		
-		virtual bool diffusionEvolve(volScalarField&,volVectorField&,volVectorField&);
+		virtual bool diffusionEvolve(volScalarField&,volVectorField&,volVectorField&,volVectorField&);
 
         virtual bool bubbleEvolve(volScalarField&, volScalarField&, volVectorField&,volVectorField&);
 
