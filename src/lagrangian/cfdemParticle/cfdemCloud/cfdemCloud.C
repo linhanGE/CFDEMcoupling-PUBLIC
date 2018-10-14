@@ -968,17 +968,17 @@ bool Foam::cfdemCloud::diffusionEvolve
 
         // update voidFractionField
         setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
-
-        if (UsmoothFlag_) 
+ 
+         if (UsmoothFlag_) 
         {
+            Info << "Smoothning U" << endl;
+            Usmooth.primitiveFieldRef() = U.primitiveFieldRef();
             Usmooth.primitiveFieldRef() *= alpha.primitiveFieldRef();
             smoothingM().smoothen(Usmooth);
             Usmooth.primitiveFieldRef() /= alpha.primitiveFieldRef();
             Usmooth.correctBoundaryConditions();
         } 
-        else 
-            Usmooth = U;
-        
+       
         if (useDDTvoidfraction_ != word("a"))
         {
             if(dataExchangeM().couplingStep() < 2)
