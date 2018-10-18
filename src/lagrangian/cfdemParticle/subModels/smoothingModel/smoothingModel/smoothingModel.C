@@ -171,19 +171,6 @@ void smoothingModel::smoothenAbsolutField(volVectorField& vecField) const
     particleCloud_.scaleWithVcell(vecField);
 }
 
-void smoothingModel::smoothenAbsolutField(volVectorField& vecField,volScalarField& scalField) const
-{
-
-    //1 - First make the field volume-specific
-    particleCloud_.makeSpecific(vecField);
-
-    //2 - smoothen now the volume-specific field (the volume integral of this field will be conserved!)
-    fSmoothen(vecField,scalField);
-
-    //3 - Finally, make field absolute again
-    particleCloud_.scaleWithVcell(vecField);
-}
-
 } // End namespace Foam
 
 // ************************************************************************* //

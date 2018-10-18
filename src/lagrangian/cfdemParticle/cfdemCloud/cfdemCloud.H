@@ -270,8 +270,6 @@ protected:
     virtual void setParticleForceField();
 
     virtual void setVectorAverages();
-	
-	virtual void setUnsmoothedUsbyAlphas();
 
 public:
 

@@ -584,13 +584,12 @@ void Foam::cfdemCloud::resetAlphaG()
 
 void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 {
-    alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
+    alpha = cfdemCloud::voidFractionM().voidFractionInterp();
 }
 
 void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
 {
 	alpha == 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
-    // alpha == cfdemCloud::voidFractionM().voidFractionInterp();
 }
 
 void Foam::cfdemCloud::setAlphaGas(volScalarField& alpha, volScalarField& alphaG)
@@ -631,17 +630,6 @@ void Foam::cfdemCloud::setVectorAverages()
         false
     );
     if(verbose_) Info << "setVectorAverage done." << endl;
-}
-
-void Foam::cfdemCloud::setUnsmoothedUsbyAlphas()
-{
-	averagingM().setVectorSum
-    (
-        averagingM().UsNext(),
-        velocities_,
-        particleVolumes_,  // this is actually the alphas in diffusion method
-        NULL //mask
-    );
 }
 
 // * * * * * * * * * * * * * * * public Member Functions  * * * * * * * * * * * * * //
@@ -764,8 +752,7 @@ bool Foam::cfdemCloud::evolve
                      << "\n- resetVolFields()" << endl;
             }
             averagingM().resetVectorAverage(averagingM().UsPrev(),averagingM().UsNext(),false);
-            // resetVoidFraction();
-            resetParticleFraction();
+            resetVoidFraction();
             averagingM().resetVectorAverage(forceM(0).impParticleForces(),forceM(0).impParticleForces(),true);
             averagingM().resetVectorAverage(forceM(0).expParticleForces(),forceM(0).expParticleForces(),true);
             averagingM().resetWeightFields();
@@ -800,8 +787,7 @@ bool Foam::cfdemCloud::evolve
 
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
-            // smoothingM().smoothen(voidFractionM().voidFractionNext());
-            smoothingM().smoothen(voidFractionM().particleFractionNext());
+            smoothingM().smoothen(voidFractionM().voidFractionNext());
 
             //only smoothen if we use implicit force coupling in cells void of particles
             //because we need unsmoothened Us field to detect cells for explicit 
@@ -913,7 +899,6 @@ bool Foam::cfdemCloud::diffusionEvolve
             }
             averagingM().resetVectorAverage(averagingM().UsPrev(),averagingM().UsNext(),false);
             resetParticleFraction();
-            averagingM().resetVectorAverage(forceM(0).impParticleForces(),forceM(0).impParticleForces(),true);
             averagingM().resetVectorAverage(forceM(0).expParticleForces(),forceM(0).expParticleForces(),true);
             averagingM().resetWeightFields();
             for (int i=0;i<momCoupleModels_.size(); i++)
@@ -944,14 +929,21 @@ bool Foam::cfdemCloud::diffusionEvolve
 
             // set average particles velocity field
             clockM().start(20,"setVectorAverage");
-            if (useDDTvoidfraction_==word("a")) setUnsmoothedUsbyAlphas();   // by this function, UsNext = Us * alphas (unsmoothed)
+            setVectorAverages();
+            
+            if (useDDTvoidfraction_==word("a"))
+            {
+                averagingM().UsNext().primitiveFieldRef() *=voidFractionM().particleFractionNext().primitiveFieldRef();
+            }
           
             //Smoothen "next" fields            
             smoothingM().dSmoothing();
-			
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
-            // smoothingM().smoothen(voidFractionM().voidFractionNext());
-            if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); // divided by smoothed alphas
+            
+            if (useDDTvoidfraction_==word("a")) 
+            {
+                smoothingM().smoothen(averagingM().UsNext()); 
+            }
 
            clockM().stop("setVectorAverage");
         }
