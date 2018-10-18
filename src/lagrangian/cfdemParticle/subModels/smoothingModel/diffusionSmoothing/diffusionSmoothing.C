@@ -174,7 +174,7 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
 	// bound diffWorkField
     forAll(diffWorkField.primitiveFieldRef(),cellI)
     {
-         if (diffWorkField.primitiveFieldRef()[cellI] > maxAlphas_)
+        if (diffWorkField.primitiveFieldRef()[cellI] > maxAlphas_)
 			Info << "Unphysical alphas found" << endl;	
         diffWorkField.primitiveFieldRef()[cellI]=max(minAlphas_,min(maxAlphas_,diffWorkField.primitiveFieldRef()[cellI]));
     }

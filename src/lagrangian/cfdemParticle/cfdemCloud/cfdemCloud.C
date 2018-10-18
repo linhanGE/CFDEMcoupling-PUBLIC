@@ -589,7 +589,8 @@ void Foam::cfdemCloud::setAlpha(volScalarField& alpha)
 
 void Foam::cfdemCloud::setAlphaDiffusion(volScalarField& alpha)
 {
-	alpha = 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
+	alpha == 1.0 - cfdemCloud::voidFractionM().particleFractionInterp();
+    // alpha == cfdemCloud::voidFractionM().voidFractionInterp();
 }
 
 void Foam::cfdemCloud::setAlphaGas(volScalarField& alpha, volScalarField& alphaG)
@@ -949,6 +950,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             smoothingM().dSmoothing();
 			
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
+            // smoothingM().smoothen(voidFractionM().voidFractionNext());
             if (useDDTvoidfraction_==word("a")) smoothingM().UsSmoothen(averagingM().UsNext(),voidFractionM().particleFractionNext()); // divided by smoothed alphas
 
            clockM().stop("setVectorAverage");
@@ -986,8 +988,9 @@ bool Foam::cfdemCloud::diffusionEvolve
                 alpha.oldTime() = alpha; // supress volume src
                 alpha.oldTime().correctBoundaryConditions();
             }
-            alpha.correctBoundaryConditions();
         }
+        alpha.correctBoundaryConditions();
+
         // calc ddt(voidfraction)
         calcDdtVoidfraction(alpha,Us);
 

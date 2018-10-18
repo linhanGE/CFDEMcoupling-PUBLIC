@@ -98,7 +98,7 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
 
             if (cellI >= 0)  // particel centre is in domain
             {
-                cellVol = particleCloud_.mesh().V()[cellI];    // voidfractionNext_ is a volScalarField, the member function mesh is??
+                cellVol = particleCloud_.mesh().V()[cellI];  // voidfractionNext_ is a volScalarField, the member function mesh is??
                 radius = particleCloud_.radius(index);
                 volume = 4.188790205*radius*radius*radius*scaleVol;
 
