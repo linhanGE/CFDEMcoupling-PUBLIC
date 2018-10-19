@@ -69,8 +69,7 @@ Foam::smoothingModel::smoothingModel
             IOobject::NO_WRITE
         ),
         particleCloud_.mesh(),
-        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero),
-        zeroGradientFvPatchScalarField::typeName
+        dimensionedVector("zero", dimensionSet(0,0,0,0,0), vector::zero)
     ),
     sSmoothField_
     (   
@@ -83,8 +82,7 @@ Foam::smoothingModel::smoothingModel
             IOobject::NO_WRITE
         ),
         particleCloud_.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
-        zeroGradientFvPatchScalarField::typeName
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
     )
 {}
 
@@ -131,17 +129,6 @@ void smoothingModel::dSmoothing() const
     //dSmooth *= 0.0;
 }
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-void smoothingModel::UsSmoothen(volVectorField& vecField, volScalarField& alphas) const
-{
-	// do nothing
-}
-
-void smoothingModel::fSmoothen(volVectorField& vecField, volScalarField& alpha) const
-{
-	// do nothing
-}
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 void smoothingModel::smoothenAbsolutField(volScalarField& scalField) const
@@ -170,7 +157,6 @@ void smoothingModel::smoothenAbsolutField(volVectorField& vecField) const
     //3 - Finally, make field absolute again
     particleCloud_.scaleWithVcell(vecField);
 }
-
 } // End namespace Foam
 
 // ************************************************************************* //

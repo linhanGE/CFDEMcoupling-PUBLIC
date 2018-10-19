@@ -180,6 +180,21 @@ void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**&
             }// end found cells
         //}// end if masked
     }// end loop all particles
+
+    //bringing eulerian field to particle array
+    for(label index=0; index< particleCloud_.numberOfParticles(); index++)
+    {
+        for(label subcell=0;subcell<cellsPerParticle_[index][0];subcell++)
+        {
+            label cellID = particleCloud_.cellIDs()[index][subcell];
+
+            if(cellID >= 0)
+            {
+                 // set particle based voidfraction
+                 voidfractions[index][subcell] = 1;
+            }
+        }
+    }
 }
 
 void bigParticleDiffVoidFraction::buildLabelHashSet

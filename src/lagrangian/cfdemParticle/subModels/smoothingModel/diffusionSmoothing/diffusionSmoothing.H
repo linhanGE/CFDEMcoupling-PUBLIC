@@ -105,9 +105,7 @@ public:
 		
 		void smoothen(volVectorField&) const;
 
-        void UsSmoothen(volVectorField&, volScalarField&) const;
-		
-		void smoothenReferenceField(volVectorField&) const;
+        void smoothenReferenceField(volVectorField&) const;
 
 };
 

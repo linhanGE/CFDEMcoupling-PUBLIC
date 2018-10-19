@@ -899,6 +899,8 @@ bool Foam::cfdemCloud::diffusionEvolve
             }
             averagingM().resetVectorAverage(averagingM().UsPrev(),averagingM().UsNext(),false);
             resetParticleFraction();
+            resetVoidFraction();
+            averagingM().resetVectorAverage(forceM(0).impParticleForces(),forceM(0).impParticleForces(),true);
             averagingM().resetVectorAverage(forceM(0).expParticleForces(),forceM(0).expParticleForces(),true);
             averagingM().resetWeightFields();
             for (int i=0;i<momCoupleModels_.size(); i++)
@@ -931,7 +933,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             clockM().start(20,"setVectorAverage");
             setVectorAverages();
             
-            if (useDDTvoidfraction_==word("a"))
+            if (useDDTvoidfraction_== word("a"))
             {
                 averagingM().UsNext().primitiveFieldRef() *=voidFractionM().particleFractionNext().primitiveFieldRef();
             }
@@ -940,9 +942,19 @@ bool Foam::cfdemCloud::diffusionEvolve
             smoothingM().dSmoothing();
 			smoothingM().smoothen(voidFractionM().particleFractionNext());
             
-            if (useDDTvoidfraction_==word("a")) 
+            if (useDDTvoidfraction_== word("a")) 
             {
-                smoothingM().smoothen(averagingM().UsNext()); 
+                smoothingM().smoothen(averagingM().UsNext());
+
+                forAll(averagingM().UsNext().primitiveFieldRef(),cellI)
+                {
+                    if (voidFractionM().particleFractionNext().primitiveFieldRef() > ROOTVSMALL)
+                    {
+                        averagingM().UsNext().primitiveFieldRef()[cellI] /= 
+                            voidFractionM().particleFractionNext().primitiveFieldRef()[cellI];
+                    }
+                }
+                
             }
 
            clockM().stop("setVectorAverage");
@@ -959,29 +971,25 @@ bool Foam::cfdemCloud::diffusionEvolve
             FatalError << "cfdemCloud::dataExchangeM().timeStepFraction() = "<< dataExchangeM().timeStepFraction() <<" must be >1 or <0 : This might be due to the fact that you used a adjustable CFD time step. Please use a fixed CFD time step." << abort(FatalError);
         }
         clockM().start(24,"interpolateEulerFields");
-
-        // update voidFractionField
-        setAlphaDiffusion(alpha);    // alpha must be passed, cause used in other head file
- 
-         if (UsmoothFlag_) 
+      
+         // update voidFractionField
+        setAlphaDiffusion(alpha);
+        if(dataExchangeM().couplingStep() < 2)
         {
-            Info << "Smoothning U" << endl;
+            alpha.oldTime() = alpha; // supress volume src
+            alpha.oldTime().correctBoundaryConditions();
+        }
+        alpha.correctBoundaryConditions();
+
+        if (UsmoothFlag_) 
+        {
+            Info << "Smoothing U" << endl;
             Usmooth.primitiveFieldRef() = U.primitiveFieldRef();
             Usmooth.primitiveFieldRef() *= alpha.primitiveFieldRef();
             smoothingM().smoothen(Usmooth);
             Usmooth.primitiveFieldRef() /= alpha.primitiveFieldRef();
             Usmooth.correctBoundaryConditions();
         } 
-       
-        if (useDDTvoidfraction_ != word("a"))
-        {
-            if(dataExchangeM().couplingStep() < 2)
-            {
-                alpha.oldTime() = alpha; // supress volume src
-                alpha.oldTime().correctBoundaryConditions();
-            }
-        }
-        alpha.correctBoundaryConditions();
 
         // calc ddt(voidfraction)
         calcDdtVoidfraction(alpha,Us);
@@ -1033,7 +1041,7 @@ bool Foam::cfdemCloud::diffusionEvolve
     return doCouple;
 }
 
-bool Foam::cfdemCloud::bubbleEvolve
+/*bool Foam::cfdemCloud::bubbleEvolve
 (
     volScalarField& alpha,
     volScalarField& alphaG,
@@ -1174,7 +1182,7 @@ bool Foam::cfdemCloud::bubbleEvolve
 
     }//end ignore
     return doCouple;
-}
+}*/
 
 bool Foam::cfdemCloud::reAllocArrays() const
 {

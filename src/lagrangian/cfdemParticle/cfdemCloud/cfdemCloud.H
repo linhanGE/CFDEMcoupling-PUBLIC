@@ -570,7 +570,7 @@ public:
 		
 		virtual bool diffusionEvolve(volScalarField&,volVectorField&,volVectorField&,volVectorField&);
 
-        virtual bool bubbleEvolve(volScalarField&, volScalarField&, volVectorField&,volVectorField&);
+        // virtual bool bubbleEvolve(volScalarField&, volScalarField&, volVectorField&,volVectorField&);
 
         virtual bool reAllocArrays() const;
 

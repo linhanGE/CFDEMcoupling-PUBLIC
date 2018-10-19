@@ -103,7 +103,7 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                 volume = 4.188790205*radius*radius*radius*scaleVol;
 
                 // store volume for each particle
-                particleVolumes[index][0] = volume/cellVol;           // in diffusion method, this should be volume fraction,pass to setVoidFraction
+                particleVolumes[index][0] = volume;           // in diffusion method, this should be volume fraction,pass to setVoidFraction
                 particleV[index][0] = volume;
 
                 particlefractionNext_[cellI] += volume/cellVol;				
