@@ -948,7 +948,7 @@ bool Foam::cfdemCloud::diffusionEvolve
 
                 forAll(averagingM().UsNext().primitiveFieldRef(),cellI)
                 {
-                    if (voidFractionM().particleFractionNext().primitiveFieldRef() > ROOTVSMALL)
+                    if (voidFractionM().particleFractionNext().primitiveFieldRef()[cellI] > ROOTVSMALL)
                     {
                         averagingM().UsNext().primitiveFieldRef()[cellI] /= 
                             voidFractionM().particleFractionNext().primitiveFieldRef()[cellI];

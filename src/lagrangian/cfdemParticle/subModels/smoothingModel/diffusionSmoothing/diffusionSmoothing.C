@@ -140,6 +140,9 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
     );
 
 	diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef();
+    diffWorkField.correctBoundaryConditions();
+    // diffWorkField.oldTime().primitiveFieldRef() = fieldSrc.primitiveFieldRef();
+    // diffWorkField.oldTime().correctBoundaryConditions();
 	
 	dimensionedTensor DT("DT", dimensionSet(0, 2, -1, 0, 0), smoothDirection_);
 	
@@ -165,6 +168,8 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
             solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT, diffWorkField));
         }
     }
+    
+    Info << diffWorkField.mesh().time().deltaTValue() << endl;
 
     diffusionTimeCount_[1] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();
@@ -216,7 +221,10 @@ void Foam::diffusionSmoothing::smoothen(volVectorField& fieldSrc) const
         zeroGradientFvPatchVectorField::typeName
     );
 	
-    diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef(); 
+    diffWorkField.primitiveFieldRef() = fieldSrc.primitiveFieldRef();
+    diffWorkField.correctBoundaryConditions();
+    // diffWorkField.oldTime().primitiveFieldRef()= fieldSrc.primitiveFieldRef();
+    // diffWorkField.oldTime().correctBoundaryConditions();
 	
     dimensionedTensor DT("DT", dimensionSet(0, 2, -1, 0, 0), smoothDirection_);
 	
