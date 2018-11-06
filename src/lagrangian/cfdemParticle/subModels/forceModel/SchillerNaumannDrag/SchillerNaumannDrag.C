@@ -67,7 +67,8 @@ SchillerNaumannDrag::SchillerNaumannDrag
     voidfractionFieldName_(propsDict_.lookup("voidfractionFieldName")),
     voidfraction_(sm.mesh().lookupObject<volScalarField> (voidfractionFieldName_)),
     UsFieldName_(propsDict_.lookup("granVelFieldName")),
-    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_))
+    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
+    backwardInterpolation_(false)
 {
     // suppress particle probe
     if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -97,6 +98,8 @@ SchillerNaumannDrag::SchillerNaumannDrag
         forceSubM(iFSub).readSwitches();
 
     particleCloud_.checkCG(false);
+
+    if (propsDict_.found("backwardInterpolation")) backwardInterpolation_=true;
 }
 
 
@@ -147,12 +150,25 @@ void SchillerNaumannDrag::setForce() const
 
         if (cellI > -1) // particle Found
         {
-            if(forceSubM(0).interpolation())
+            if(forceSubM(0).interpolation() && !backwardInterpolation_)
             {
                 position = particleCloud_.position(index);
                 voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
                 Ufluid = UInterpolator_().interpolate(position,cellI);
-            }else
+            }else if (backwardInterpolation_)
+            {
+                vector averageUfluid(0,0,0);
+                scalar averageVoidfraction(0);
+                for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                {
+                    label subCellID = particleCloud_.cellIDs()[index][subCell];
+                    averageUfluid += U_[subCellID];
+                    averageVoidfraction += voidfraction_[subCellID];
+                }
+                Ufluid = averageUfluid /particleCloud_.cellsPerParticle()[index][0];
+                voidfraction = averageVoidfraction /particleCloud_.cellsPerParticle()[index][0];
+            }
+            else
             {
                 voidfraction = voidfraction_[cellI];
                 Ufluid = U_[cellI];

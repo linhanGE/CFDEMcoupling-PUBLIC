@@ -72,6 +72,8 @@ private:
 
     const volVectorField& UsField_;
 
+    bool backwardInterpolation_;
+
 public:
 
     //- Runtime type information
