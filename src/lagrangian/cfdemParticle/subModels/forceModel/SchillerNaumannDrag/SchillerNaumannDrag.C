@@ -155,7 +155,8 @@ void SchillerNaumannDrag::setForce() const
                 position = particleCloud_.position(index);
                 voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
                 Ufluid = UInterpolator_().interpolate(position,cellI);
-            }else if (backwardInterpolation_)
+            }
+            else if (backwardInterpolation_)
             {
                 vector averageUfluid(0,0,0);
                 scalar averageVoidfraction(0);

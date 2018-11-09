@@ -72,6 +72,8 @@ private:
 
     const volVectorField& UsField_;  // the average particle velocity field (for implicit/expliti force split)
 
+    bool backwardInterpolation_;
+
 public:
 
     //- Runtime type information

@@ -67,7 +67,8 @@ DiFeliceDrag::DiFeliceDrag
     voidfractionFieldName_(propsDict_.lookup("voidfractionFieldName")),
     voidfraction_(sm.mesh().lookupObject<volScalarField> (voidfractionFieldName_)),
     UsFieldName_(propsDict_.lookup("granVelFieldName")),
-    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_))
+    UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
+    backwardInterpolation_(false)
 {
     // suppress particle probe
     if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -148,17 +149,26 @@ void DiFeliceDrag::setForce() const
 
             if (cellI > -1) // particle Found
             {
-                if(forceSubM(0).interpolation())
+                if(forceSubM(0).interpolation() && !backwardInterpolation_)
                 {
                     position = particleCloud_.position(index);
                     voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
                     Ufluid = UInterpolator_().interpolate(position,cellI);
-
-                    //Ensure interpolated void fraction to be meaningful
-                    // Info << " --> voidfraction: " << voidfraction << endl;
-                    if(voidfraction>1.00) voidfraction = 1.00;
-                    if(voidfraction<0.30) voidfraction = 0.30;
-                }else
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector averageUfluid(0,0,0);
+                    scalar averageVoidfraction(0);
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        averageUfluid += U_[subCellID];
+                        averageVoidfraction += voidfraction_[subCellID];
+                    }
+                    Ufluid = averageUfluid /particleCloud_.cellsPerParticle()[index][0];
+                    voidfraction = averageVoidfraction /particleCloud_.cellsPerParticle()[index][0];
+                }
+                else
                 {
                     voidfraction = voidfraction_[cellI];
                     Ufluid = U_[cellI];
