@@ -70,7 +70,8 @@ StokesDrag::StokesDrag
     UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
     f_(propsDict_.lookup("f")),
     bubbleCentre_(propsDict_.lookup("bubbleCentre")),
-    rpb_(readScalar(propsDict_.lookup("radiusSum")))
+    rpb_(readScalar(propsDict_.lookup("radiusSum"))),
+    backwardInterpolation_(false)
 {
     // suppress particle probe
     if (probeIt_ && propsDict_.found("suppressProbe"))
@@ -156,11 +157,25 @@ void StokesDrag::setForce() const
             position = particleCloud_.position(index);
             if(forceSubM(0).interpolation())
             {
-                voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
+                // voidfraction = voidfractionInterpolator_().interpolate(position,cellI);
                 Ufluid = UInterpolator_().interpolate(position,cellI);
-            }else
+            }
+            else if (backwardInterpolation_)
             {
-                voidfraction = voidfraction_[cellI];
+                vector averageUfluid(0,0,0);
+                scalar averageVoidfraction(0);
+                for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                {
+                    label subCellID = particleCloud_.cellIDs()[index][subCell];
+                    averageUfluid += U_[subCellID];
+                    averageVoidfraction += voidfraction_[subCellID];
+                }
+                Ufluid = averageUfluid /particleCloud_.cellsPerParticle()[index][0];
+                // voidfraction = averageVoidfraction /particleCloud_.cellsPerParticle()[index][0];
+            }
+            else
+            {
+                // voidfraction = voidfraction_[cellI];
                 Ufluid = U_[cellI];
             }
 
@@ -192,25 +207,10 @@ void StokesDrag::setForce() const
 
             if (magUr > 0)
             {
-               // calc particle Re Nr
-                Rep = ds*magUr/nuf;
-
-                // calc fluid drag Coeff
-                Cd = 24.0/Rep;
-
-                // calc particle's drag
-                dragCoefficient = 0.125*Cd*rho
-                                  *M_PI
-                                  *ds*ds
-                                  *magUr;
-                
-                if (modelType_=="B")
-                    dragCoefficient /= voidfraction;
-
                 // calc particle's drag
                 forceSubM(0).scaleCoeff(dragCoefficient,dParcel,index);
 
-                d = sqr((position.x()-bubbleCentre_.x())*(position.x()-bubbleCentre_.x())
+                d = sqrt((position.x()-bubbleCentre_.x())*(position.x()-bubbleCentre_.x())
                    +(position.y()-bubbleCentre_.y())*(position.y()-bubbleCentre_.y())
                    +(position.z()-bubbleCentre_.z())*(position.z()-bubbleCentre_.z()));
                        
@@ -220,7 +220,7 @@ void StokesDrag::setForce() const
                     drag = dragCoefficient*Ur;
                 }
                 else 
-                    drag = dragCoefficient*Ur;
+                    drag = 6*M_PI*nuf*rho*ds/2*Ur;
 
                 // explicitCorr
                 for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
