@@ -113,7 +113,7 @@ dividedVoidFraction::dividedVoidFraction
     m ++;
 
     // for 2 different radii
-    double r1 = cbrt(1.0/29.0);
+    double r1 = cbrt(1.0/29.0);                  // cbrt is the cubic root function
     double r2 = cbrt(15.0/29.0);
     scalar r[] = { 0.75* (r2*r2*r2*r2 - r1*r1*r1*r1)/(r2*r2*r2 - r1*r1*r1),
                    0.75* (1.0 - r2*r2*r2*r2)/(1.0 - r2*r2*r2) };
@@ -134,7 +134,7 @@ dividedVoidFraction::dividedVoidFraction
         // try 2 more subpoints for each coordinate direction (6 total)
         for (int j = -1; j <= 1; j += 2)
         {
-            offsets[m][0] = r[ir]*static_cast<double>(j);
+            offsets[m][0] = r[ir]*static_cast<double>(j);             // ir: 0, 1
             offsets[m][1] = 0.;
             offsets[m][2] = 0.;
             m ++;

@@ -126,6 +126,7 @@ $(smoothingModels)/smoothingModel/smoothingModel.C
 
 $(voidFractionModels)/bigParticleVoidFraction/bigParticleVoidFraction.C
 $(voidFractionModels)/bigParticleDiffVoidFraction/bigParticleDiffVoidFraction.C
+$(voidFractionModels)/Diff2DVoidFraction/Diff2DVoidFraction.C
 $(voidFractionModels)/centreVoidFraction/centreVoidFraction.C
 $(voidFractionModels)/diffCentreVoidFraction/diffCentreVoidFraction.C
 $(voidFractionModels)/bubbleCentreVoidFraction/bubbleCentreVoidFraction.C

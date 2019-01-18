@@ -169,7 +169,7 @@ void Foam::diffusionSmoothing::smoothen(volScalarField& fieldSrc) const
         }
     }
     
-    Info << diffWorkField.mesh().time().deltaTValue() << endl;
+    // Info << diffWorkField.mesh().time().deltaTValue() << endl;
 
     diffusionTimeCount_[1] += particleCloud_.mesh().time().elapsedCpuTime() - t0;
     t0 = particleCloud_.mesh().time().elapsedCpuTime();

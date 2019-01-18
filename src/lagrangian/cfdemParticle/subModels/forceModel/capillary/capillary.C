@@ -272,8 +272,8 @@ void capillary::setForce() const
                 // C2 is a damping coefficient
                 capillaryForce = -1*magGradAlphap*Fatt*C1_+(alphaThreshold_+deltaAlphaOut_-alphap)/(deltaAlphaIn_+deltaAlphaOut_)*magGradAlphap*Fatt*C2_;
                                 // -1*magGradAlphap*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
-                                 // -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
-                                 // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
+                                // -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
+                                // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
                 }
 
                 if(forceSubM(0).verbose() && mag(capillaryForce) > 0)

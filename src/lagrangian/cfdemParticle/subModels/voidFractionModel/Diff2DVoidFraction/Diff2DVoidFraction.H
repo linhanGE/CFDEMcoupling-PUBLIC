@@ -1,3 +1,4 @@
+
 /*---------------------------------------------------------------------------*\
     CFDEMcoupling - Open Source CFD-DEM coupling
 
@@ -29,18 +30,17 @@ Description
     and OpenFOAM(R). Note: this code is not part of OpenFOAM(R) (see DISCLAIMER).
 
 Class
-    interface
+    Diff2DVoidFraction
 
 SourceFiles
-    interface.C
+    Diff2DVoidFraction.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef interface_H
-#define interface_H
+#ifndef Diff2DVoidFraction_H
+#define Diff2DVoidFraction_H
 
-#include "forceModel.H"
-#include "interpolationCellPoint.H"
+#include "voidFractionModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -48,48 +48,28 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class interface Declaration
+                           Class noDrag Declaration
 \*---------------------------------------------------------------------------*/
 
-class interface
+class Diff2DVoidFraction
 :
-    public forceModel
+    public voidFractionModel
 {
+
 private:
-    dictionary propsDict_;
-
-    word VOFvoidfractionFieldName_;
-
-    const volScalarField& alpha_;    // ref to VOF voidfraction
-
-    word gradAlphaName_;
-
-    const volVectorField& gradAlpha_;    // ref to fvc::grad(VOF voidfraction)
-
-    const scalar sigma_;
-
-    const scalar theta_;
-
-    const scalar alphaThreshold_;
-
-    const scalar  deltaAlphaIn_;
-
-    // const scalar  deltaAlphaOut_;
-
-    scalar C_; // model constant
-
-    bool interpolation_; // use interpolated field values (does not work for fine grids???)
+        dictionary propsDict_;
+        scalar cellThickness_;
 
 public:
 
     //- Runtime type information
-    TypeName("interface");
+    TypeName("Diff2D");
 
 
     // Constructors
 
         //- Construct from components
-        interface
+        Diff2DVoidFraction
         (
             const dictionary& dict,
             cfdemCloud& sm
@@ -97,11 +77,22 @@ public:
 
     // Destructor
 
-        ~interface();
+        ~Diff2DVoidFraction();
 
 
     // Member Functions
-        void setForce() const;
+        void setvoidFraction(double** const& ,double**&, double**&, double**&, double**&) const;
+
+        void buildLabelHashSet
+        (
+            const scalar radius,
+            const vector position,
+            const label cellID,
+            labelHashSet& hashSett
+            /*labelHashSet& hashSetComplete,
+            labelHashSet& hashSetPartial,
+            labelHashSet& hashSetRest*/
+        ) const;
 };
 
 

@@ -31,7 +31,7 @@ Description
 
 #include "error.H"
 
-#include "bigParticleDiffVoidFraction.H"
+#include "Diff2DVoidFraction.H"
 #include "addToRunTimeSelectionTable.H"
 #include "locateModel.H"
 #include "dataExchangeModel.H"
@@ -44,12 +44,12 @@ namespace Foam
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(bigParticleDiffVoidFraction, 0);
+defineTypeNameAndDebug(Diff2DVoidFraction, 0);
 
 addToRunTimeSelectionTable
 (
     voidFractionModel,
-    bigParticleDiffVoidFraction,
+    Diff2DVoidFraction,
     dictionary
 );
 
@@ -57,14 +57,15 @@ addToRunTimeSelectionTable
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 // Construct from components
-bigParticleDiffVoidFraction::bigParticleDiffVoidFraction
+Diff2DVoidFraction::Diff2DVoidFraction
 (
     const dictionary& dict,
     cfdemCloud& sm
 )
 :
     voidFractionModel(dict,sm),
-    propsDict_(dict.subDict(typeName + "Props"))    
+    propsDict_(dict.subDict(typeName + "Props")),
+    cellThickness_(readScalar(propsDict_.lookup("cellThickness")))    
 {
     //reading maxCellsPerParticle from dictionary
     maxCellsPerParticle_=readLabel(propsDict_.lookup("maxCellsPerParticle"));
@@ -75,13 +76,13 @@ bigParticleDiffVoidFraction::bigParticleDiffVoidFraction
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-bigParticleDiffVoidFraction::~bigParticleDiffVoidFraction()
+Diff2DVoidFraction::~Diff2DVoidFraction()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**& voidfractions,double**& particleWeights,double**& particleVolumes,double**& particleV) const
+void Diff2DVoidFraction::setvoidFraction(double** const& mask,double**& voidfractions,double**& particleWeights,double**& particleVolumes,double**& particleV) const
 {
     reAllocArrays();
 
@@ -106,7 +107,7 @@ void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**&
             //collecting data
             label particleCenterCellID=particleCloud_.cellIDs()[index][0];
             radius = particleCloud_.radius(index);
-            volume = 4.188790205*radius*radius*radius*scaleVol;
+            volume = 3.141592654*radius*radius*scaleVol;             // volume is the area in 2D
             radius *= scaleRadius;
             vector positionCenter=particleCloud_.position(index);
 
@@ -143,7 +144,7 @@ void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**&
                     scalar occupiedVolume = volume/hashSetLength;
 
                     // correct volumefraction of centre
-                    particlefractionNext_[particleCenterCellID] +=occupiedVolume/particleCloud_.mesh().V()[particleCenterCellID];
+                    particlefractionNext_[particleCenterCellID] +=occupiedVolume/(particleCloud_.mesh().V()[particleCenterCellID]/cellThickness_);
 
                     particleWeights[index][0] += 1.0/hashSetLength;
                     particleVolumes[index][0] += occupiedVolume;
@@ -158,7 +159,7 @@ void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**&
                         label cellI=hashSett.toc()[i];
                         particleCloud_.cellIDs()[index][i+1]=cellI; //adding subcell represenation
 
-                        particlefractionNext_[cellI] +=occupiedVolume/particleCloud_.mesh().V()[cellI];
+                        particlefractionNext_[cellI] +=occupiedVolume/(particleCloud_.mesh().V()[cellI]/cellThickness_);
                         particleWeights[index][i+1] += 1.0/hashSetLength;
                         particleVolumes[index][i+1] += occupiedVolume;
                         particleV[index][0] += occupiedVolume;
@@ -195,7 +196,7 @@ void bigParticleDiffVoidFraction::setvoidFraction(double** const& mask,double**&
     }
 }
 
-void bigParticleDiffVoidFraction::buildLabelHashSet
+void Diff2DVoidFraction::buildLabelHashSet
 (
     const scalar radius,
     const vector position,
