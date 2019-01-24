@@ -67,6 +67,7 @@ constDiffSmoothing::constDiffSmoothing
     upperLimit_(readScalar(propsDict_.lookup("upperLimit"))),
     smoothingLength_(dimensionedScalar("smoothingLength",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
     smoothingLengthReferenceField_(dimensionedScalar("smoothingLengthReferenceField",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
+    smoothCycles_(readScalar(propsDict_.lookup("smoothCycles"))),
     DT_("DT", dimensionSet(0,2,-1,0,0), 0.),
     verbose_(false)
 {
@@ -76,9 +77,6 @@ constDiffSmoothing::constDiffSmoothing
 
     if(propsDict_.found("smoothingLengthReferenceField"))  
        smoothingLengthReferenceField_.value() = double(readScalar(propsDict_.lookup("smoothingLengthReferenceField")));
-
-    checkFields(sSmoothField_);
-    checkFields(vSmoothField_);
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -102,23 +100,31 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
     sSmoothField.dimensions().reset(fieldSrc.dimensions());
     sSmoothField ==fieldSrc;
     sSmoothField.correctBoundaryConditions();
-    sSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    /*sSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
     sSmoothField.oldTime()=fieldSrc;
-    sSmoothField.oldTime().correctBoundaryConditions();
-
+    sSmoothField.oldTime().correctBoundaryConditions();*/
+    
     double deltaT = sSmoothField.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
-
+    
     // do smoothing
-    solve
+    for
     (
-        fvm::ddt(sSmoothField)
-       -fvm::laplacian(DT_, sSmoothField)
-    );
+        subCycle<volScalarField> alphasSubCycle(sSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+    )
+    {
+        solve
+        (
+            fv::EulerDdtScheme<scalar>(particleCloud_.mesh()).fvmDdt(sSmoothField)
+           -fvm::laplacian(DT_, sSmoothField)
+        );
+    }
 
     // bound sSmoothField_
     forAll(sSmoothField,cellI)
     {
+        if (sSmoothField.primitiveFieldRef()[cellI] > upperLimit_)
+			Info << "Unphysical alphas found" << endl;	
         sSmoothField[cellI]=max(lowerLimit_,min(upperLimit_,sSmoothField[cellI]));
     }  
 
@@ -143,19 +149,24 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
     vSmoothField.dimensions().reset(fieldSrc.dimensions());
     vSmoothField=fieldSrc;
     vSmoothField.correctBoundaryConditions();
-    vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
+    /*vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
     vSmoothField.oldTime()=fieldSrc;
-    vSmoothField.oldTime().correctBoundaryConditions();
+    vSmoothField.oldTime().correctBoundaryConditions();*/
 
     double deltaT = vSmoothField_.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
 
-    // do smoothing
-    solve
+    for
     (
-        fvm::ddt(vSmoothField)
-       -fvm::laplacian(DT_, vSmoothField)
-    );
+        subCycle<volVectorField> alphasSubCycle(vSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+    )
+    {
+        solve
+        (
+            fv::EulerDdtScheme<vector>(particleCloud_.mesh()).fvmDdt(vSmoothField)
+           -fvm::laplacian(DT_, vSmoothField)
+        );
+    }
 
     // get data from working vSmoothField
     fieldSrc=vSmoothField;

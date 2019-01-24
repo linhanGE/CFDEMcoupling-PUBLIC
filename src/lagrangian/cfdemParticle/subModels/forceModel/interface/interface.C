@@ -70,7 +70,7 @@ interface::interface
     theta_(readScalar(propsDict_.lookup("theta"))),
     alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
     deltaAlphaIn_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
-    // deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
+    deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
     C_(1.0),
     interpolation_(false)
 {
@@ -113,8 +113,6 @@ void interface::setForce() const
             scalar dp = 2*particleCloud_.radius(index);
             vector position = particleCloud_.position(index);
             label cellI = particleCloud_.cellIDs()[index][0];
-            scalar Vs;
-            scalar rhop;
 
             if(cellI >-1.0) // particle found on proc domain
             {
@@ -146,15 +144,27 @@ void interface::setForce() const
 
                 // Initialize an interfaceForce vector
                 vector interfaceForce = Foam::vector(0,0,0);
-                Vs = particleCloud_.particleVolume(index);
-                rhop = particleCloud_.density(index);
 
                 // Calculate the interfaceForce (range of alphap needed for stability)
 
-                if ((alphaThreshold_-deltaAlphaIn_) <= alphap && alphap <= alphaThreshold_) // alphaThreshold_ should be large enough
+                if ((alphaThreshold_-deltaAlphaIn_) < alphap && alphap < (alphaThreshold_+deltaAlphaOut_))
                 {
-                    
-                    interfaceForce = C_/max(mag(gradAlpha_),dimensionedScalar("a",dimensionSet(0,-1,0,0,0), SMALL))*(alphaThreshold_-alphap)*magGradAlphap;   // Fmax = 2*pi*sigma_*Rp
+                    Info << "within threshold limits" << endl;
+                    // Calculate estimate attachment force as
+                    // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
+                    scalar Fatt =   mag(
+                                   6
+                                 * sigma_
+                                 * sin(M_PI - theta_/2)
+                                 * sin(M_PI + theta_/2)
+                            )
+                      * M_PI
+                      * dp;
+
+                    interfaceForce = - magGradAlphap
+                         * tanh(alphap-alphaThreshold_)
+                         * Fatt
+                         * C_;
                 }
 
                 if(true && mag(interfaceForce) > 0)
@@ -168,6 +178,15 @@ void interface::setForce() const
                 Info << "interfaceForce = " << interfaceForce << endl;
                 Info << "mag(interfaceForce) = " << mag(interfaceForce) << endl;
                 }
+
+                // limit interface force
+                /*scalar rhoP=3000;
+                scalar mP=dp*dp*dp*3.1415/4*rhoP;
+                scalar fMax=5*mP*9.81;
+                if(mag(interfaceForce)>fMax){
+                    interfaceForce /= mag(interfaceForce)/fMax;
+                    Info << "interface force is limited to " << interfaceForce << endl;
+                }*/
 
                // write particle based data to global array
                forceSubM(0).partToArray(index,interfaceForce,vector::zero);

@@ -520,7 +520,7 @@ const volScalarField& forceSubModel::nuField() const
         if(switches_[8]) // scalarViscosity=true
             return nu_;
         else
-            return particleCloud_.turbulence().nu();
+            return particleCloud_.turbulence().nu();   // to VoF solver This is not a constant value?
     #endif
 }
 

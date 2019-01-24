@@ -118,8 +118,6 @@ $(registryModels)/registryModel/newRegistryModel.C
 $(registryModels)/registryModel/registryModel.C
 
 $(smoothingModels)/constDiffSmoothing/constDiffSmoothing.C
-$(smoothingModels)/diffusionSmoothing/diffusionSmoothing.C
-$(smoothingModels)/constDiffCentreSmoothing/constDiffCentreSmoothing.C
 $(smoothingModels)/noSmoothing/noSmoothing.C
 $(smoothingModels)/smoothingModel/newSmoothingModel.C
 $(smoothingModels)/smoothingModel/smoothingModel.C

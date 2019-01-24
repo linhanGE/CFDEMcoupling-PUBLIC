@@ -925,7 +925,22 @@ bool Foam::cfdemCloud::diffusionEvolve
             clockM().start(19,"setvoidFraction");
             if(verbose_) Info << "- setvoidFraction()" << endl;
             setVoidFraction();
+            // test the transfer of volumefraction
+            /*forAll(voidFractionM().particleFractionNext(),cellI)
+            {
+                if (voidFractionM().particleFractionNext()[cellI] !=0)
+			    Info << "reasonable particlefraction found" << endl;	
+            }
 
+            forAll(voidFractionM().voidFractionNext(),cellI)
+            {
+                if (voidFractionM().voidFractionNext()[cellI] !=1)
+			    Info << "reasonable voidfraction found" << endl;	
+            }*/  
+
+            /*scalar totalNumber=mesh_.nCells();
+            reduce(totalNumber, sumOp<scalar>());
+            Info << totalNumber <<endl;*/
             if(verbose_) Info << "setvoidFraction done." << endl;
             clockM().stop("setvoidFraction");
 
@@ -935,7 +950,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             
             if (useDDTvoidfraction_== word("a"))
             {
-                averagingM().UsNext().primitiveFieldRef() *=voidFractionM().particleFractionNext().primitiveFieldRef();
+                averagingM().UsNext() *=voidFractionM().particleFractionNext();
             }
           
             //Smoothen "next" fields            
@@ -946,15 +961,15 @@ bool Foam::cfdemCloud::diffusionEvolve
             {
                 smoothingM().smoothen(averagingM().UsNext());
 
-                forAll(averagingM().UsNext().primitiveFieldRef(),cellI)
+                forAll(averagingM().UsNext(),cellI)
                 {
-                    if (voidFractionM().particleFractionNext().primitiveFieldRef()[cellI] > ROOTVSMALL)
+                    if (voidFractionM().particleFractionNext()[cellI] > ROOTVSMALL)
                     {
-                        averagingM().UsNext().primitiveFieldRef()[cellI] /= 
-                            voidFractionM().particleFractionNext().primitiveFieldRef()[cellI];
+                        averagingM().UsNext()[cellI] /= 
+                            voidFractionM().particleFractionNext()[cellI];
                     }
                 }
-                
+                averagingM().UsNext().correctBoundaryConditions();
             }
 
            clockM().stop("setVectorAverage");
@@ -974,6 +989,7 @@ bool Foam::cfdemCloud::diffusionEvolve
       
          // update voidFractionField
         setAlphaDiffusion(alpha);
+        
         if(dataExchangeM().couplingStep() < 2)
         {
             alpha.oldTime() = alpha; // supress volume src
@@ -1376,26 +1392,10 @@ tmp<volScalarField> cfdemCloud::voidfractionNuEff(volScalarField& voidfraction) 
 
 tmp<volScalarField> cfdemCloud::voidfractionNuEffVOF(volScalarField& voidfraction) const
 {
-    if (modelType_=="B" || modelType_=="Bfull")
-    {
-        return tmp<volScalarField>
-        (
-               new volScalarField("viscousTerm", (  turbulence_.mut()
-                                                   + turbulence_.mu()
-                                                  )
-                                  )
-        );
-    }
-    else
-    {
-        return tmp<volScalarField>
-        (
-               new volScalarField("viscousTerm", voidfraction*(  turbulence_.mut()
-                                                                + turbulence_.mu()
-                                                               )
-                                  )
-        );
-    }
+    return tmp<volScalarField>
+    (
+           new volScalarField("viscousTerm", voidfraction*( turbulence_.mut() + turbulence_.mu() ))
+    );
 }
 
 void cfdemCloud::resetArray(double**& array,int length,int width,double resetVal)

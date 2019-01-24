@@ -42,6 +42,8 @@ SourceFiles
 #define constDiffSmoothing_H
 
 #include "smoothingModel.H"
+#include "subCycle.H"
+#include "EulerDdtScheme.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -64,7 +66,9 @@ private:
     scalar upperLimit_;
     dimensionedScalar smoothingLength_;
     dimensionedScalar smoothingLengthReferenceField_;
+    scalar smoothCycles_;
     mutable dimensionedScalar DT_;
+
     bool verbose_;
 
 public:

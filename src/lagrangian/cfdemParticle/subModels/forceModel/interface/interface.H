@@ -74,7 +74,7 @@ private:
 
     const scalar  deltaAlphaIn_;
 
-    // const scalar  deltaAlphaOut_;
+    const scalar  deltaAlphaOut_;
 
     scalar C_; // model constant
 
