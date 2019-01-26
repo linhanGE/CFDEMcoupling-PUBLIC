@@ -72,9 +72,11 @@ capillary::capillary
     deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
     C1_(1.0),
     C2_(1.0),
+    backwardInterpolation_(false),
     interpolation_(false),
-    centers(sm.mesh().C()),
-    vols(sm.mesh().V())
+    verbose(false)
+    // centers(sm.mesh().C()),
+    // vols(sm.mesh().V())
     /*alpha05Dict
     (
         IOobject
@@ -103,12 +105,16 @@ capillary::capillary
     forceSubM(0).setSwitchesList(0,true); // activate treatExplicit switch
     forceSubM(0).setSwitchesList(4,true); // activate search for interpolate switch
 
+    forceSubM(0).setSwitches(0,true);
     // read those switches defined above, if provided in dict
     forceSubM(0).readSwitches();
     //for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
     //    forceSubM(iFSub).readSwitches();
 
     particleCloud_.checkCG(false);
+
+    if(propsDict_.found("backwardInterpolation_"))  
+        backwardInterpolation_ = true;
 }
 
 
@@ -210,7 +216,8 @@ void capillary::setForce() const
             if(cellI >-1.0) // particle found on proc domain
             {
                 scalar alphap;
-                vector magGradAlphap;
+                vector n;
+                vector gradAlphap(0,0,0);
                 // Us = particleCloud_.velocity(index);
                 /*for (int i = 1, i<=nuOfPoints,i++)
                 {
@@ -231,8 +238,22 @@ void capillary::setForce() const
                     alphap = alphaInterpolator_().interpolate(position,cellI);
 
                     // make interpolation object for grad(alpha)/|grad(alpha)|
-                    vector gradAlphap = gradAlphaInterpolator_().interpolate(position,cellI);
-                    magGradAlphap = gradAlphap/max(mag(gradAlphap),SMALL);
+                    gradAlphap = gradAlphaInterpolator_().interpolate(position,cellI);
+                    n = gradAlphap/max(mag(gradAlphap),SMALL);
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalGradAlphaVol(0,0,0);
+                    scalar tolVol(0);
+ 
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalGradAlphaVol += gradAlpha_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    gradAlphap = totalGradAlphaVol /tolVol;
+                    n = gradAlphap/max(mag(gradAlphap),SMALL);
                 }
                 else // use cell centered values for alpha
                 {
@@ -240,21 +261,20 @@ void capillary::setForce() const
                     //volVectorField gradAlpha=fvc::grad(alpha_);
                     //volVectorField a = gradAlpha/
                     //                   max(mag(gradAlpha),dimensionedScalar("a",dimensionSet(0,-1,0,0,0), SMALL));
-                    //magGradAlphap = a[cellI];
+                    //n = a[cellI];
 
                     alphap = alpha_[cellI];
-                    volVectorField a = gradAlpha_/
-                                       max(mag(gradAlpha_),dimensionedScalar("a",dimensionSet(0,-1,0,0,0), SMALL));
-                    magGradAlphap = a[cellI];
+                    gradAlphap = gradAlpha_[cellI];
+                    n = gradAlphap/max(mag(gradAlphap),SMALL);
                 }
 
                 // velocity at gradient direction
                 // vector Ub(vx,vy,vz); 
 
                 // bubble rising velocity along the gradient direction                
-                // vector Ubn = Ub & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // vector Ubn = Ub & n/(n & n) * n;
                 // relative velocity at gradient
-                // vector Usn = Us & magGradAlphap/(magGradAlphap & magGradAlphap) * magGradAlphap;
+                // vector Usn = Us & n/(n & n) * n;
                 // relative velocity along the gradient direction
                 // vector Urn = Ubn-Usn;
                 // scalar magUr = mag(Ur);
@@ -270,20 +290,20 @@ void capillary::setForce() const
                 // C_ can be specified as the maximum value as 1/(dacayFactor*sqrt(2*pi)) to realize the Gaussian distribution
                 // be careful with the sign, gradient points from low pressure to high pressure
                 // C2 is a damping coefficient
-                capillaryForce = -1*magGradAlphap*Fatt*C1_+(alphaThreshold_+deltaAlphaOut_-alphap)/(deltaAlphaIn_+deltaAlphaOut_)*magGradAlphap*Fatt*C2_;
-                                // -1*magGradAlphap*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
-                                // -1*magGradAlphap*Fatt*C_*sin(alphap*M_PI);
+                capillaryForce = -1*n*Fatt*C1_+(alphaThreshold_+deltaAlphaOut_-alphap)/(deltaAlphaIn_+deltaAlphaOut_)*n*Fatt*C2_;
+                                // -1*n*Fatt*sin(alphap*M_PI)*C1_+Urn*C2_;
+                                // -1*n*Fatt*C_*sin(alphap*M_PI);
                                 // * exp(-0.5*((alphap-alphaCentre_)/decayFactor_)*((alphap-alphaCentre_)/decayFactor_));
                 }
 
-                if(forceSubM(0).verbose() && mag(capillaryForce) > 0)
+                if(verbose && mag(capillaryForce) > 0)
                 {
                 Info << "dp = " << dp << endl;
                 Info << "position = " << position << endl;
                 Info << "cellI = " << cellI << endl;
                 Info << "alpha cell = " << alpha_[cellI] << endl;
                 Info << "alphap = " << alphap << endl;
-                Info << "magGradAlphap = " << magGradAlphap << endl;
+                Info << "n = " << n << endl;
                 Info << "capillaryForce = " << capillaryForce << endl;
                 Info << "mag(capillaryForce) = " << mag(capillaryForce) << endl;
                 }

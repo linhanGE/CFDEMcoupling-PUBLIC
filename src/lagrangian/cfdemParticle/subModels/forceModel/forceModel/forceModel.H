@@ -123,6 +123,8 @@ protected:
 
         mutable autoPtr<interpolation<vector> > gradAlphaInterpolator_;
 
+        mutable autoPtr<interpolation<scalar> > sigmaKInterpolator_;
+
         mutable autoPtr<interpolation<scalar> > TInterpolator_;
 
         mutable autoPtr<interpolation<vector> > UsInterpolator_;

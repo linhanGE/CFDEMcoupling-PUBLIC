@@ -990,12 +990,12 @@ bool Foam::cfdemCloud::diffusionEvolve
          // update voidFractionField
         setAlphaDiffusion(alpha);
         
-        if(dataExchangeM().couplingStep() < 2)
+        /*if(dataExchangeM().couplingStep() < 2)
         {
             alpha.oldTime() = alpha; // supress volume src
             alpha.oldTime().correctBoundaryConditions();
         }
-        alpha.correctBoundaryConditions();
+        alpha.correctBoundaryConditions();*/
 
         if (UsmoothFlag_) 
         {
@@ -1007,13 +1007,13 @@ bool Foam::cfdemCloud::diffusionEvolve
             Usmooth.correctBoundaryConditions();
         } 
 
-        // calc ddt(voidfraction)
-        calcDdtVoidfraction(alpha,Us);
-
         // update mean particle velocity Field
-        Us = averagingM().UsInterp();
+        Us = averagingM().UsNext();
         Us.correctBoundaryConditions();
 
+        // calc ddt(voidfraction)
+        calcDdtVoidfraction(alpha,Us);
+ 
         clockM().stop("interpolateEulerFields");
         //============================================
 

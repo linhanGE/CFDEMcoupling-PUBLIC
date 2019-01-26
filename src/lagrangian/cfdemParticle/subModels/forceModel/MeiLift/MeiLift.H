@@ -81,6 +81,8 @@ private:
 
     const volVectorField& U_;
 
+    bool backwardInterpolation_;
+
     bool useSecondOrderTerms_;
 
 public:

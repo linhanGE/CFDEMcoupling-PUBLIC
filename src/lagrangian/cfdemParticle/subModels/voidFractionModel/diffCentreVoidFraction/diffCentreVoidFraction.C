@@ -67,8 +67,8 @@ diffCentreVoidFraction::diffCentreVoidFraction
     voidFractionModel(dict,sm),
     propsDict_(dict.subDict(typeName + "Props"))
 {
+    maxCellsPerParticle_=readLabel(propsDict_.lookup("maxCellsPerParticle"));
     checkWeightNporosity(propsDict_);
-    if(porosity()!=1) FatalError << "porosity not used in diffCentreVoidFraction" << abort(FatalError);
 }
 
 
@@ -88,30 +88,79 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
     scalar volume(0);
     scalar cellVol(0);
     scalar scaleVol= weight();
+    scalar scaleRadius = pow(porosity(),1./3.);
 
     for(int index=0; index< particleCloud_.numberOfParticles(); index++)
     {
-            particleWeights[index][0]=0;
-            cellsPerParticle_[index][0]=1;
-
-            label cellI = particleCloud_.cellIDs()[index][0];
-
-            if (cellI >= 0)  // particel centre is in domain
+        //if(mask[index][0])
+        //{
+            //reset
+            for(int subcell=0;subcell<cellsPerParticle_[index][0];subcell++)
             {
-                cellVol = particleCloud_.mesh().V()[cellI];  // voidfractionNext_ is a volScalarField, the member function mesh is??
-                radius = particleCloud_.radius(index);
-                volume = 4.188790205*radius*radius*radius*scaleVol;
-
-                // store volume for each particle
-                particleVolumes[index][0] = volume;           // in diffusion method, this should be volume fraction,pass to setVoidFraction
-                particleV[index][0] = volume;
-
-                particlefractionNext_[cellI] += volume/cellVol;				
-
-                // store cellweight for each particle  - this should not live here
-                particleWeights[index][0] = 1;
+                particleWeights[index][subcell]=0;
+                particleVolumes[index][subcell]=0;
             }
-    }
+            cellsPerParticle_[index][0]=1.0;
+            particleV[index][0]=0;
+
+            //collecting data
+            label particleCenterCellID=particleCloud_.cellIDs()[index][0];
+            radius = particleCloud_.radius(index);
+            volume = 4.188790205*radius*radius*radius*scaleVol;
+            radius *= scaleRadius;
+            vector positionCenter=particleCloud_.position(index);
+
+            if (particleCenterCellID >= 0)
+            {
+                labelHashSet hashSett;    // from OpenFOAM
+
+                //determining label and degree of coveredness of cells covered by the particle
+                buildLabelHashSet(radius, positionCenter, particleCenterCellID, hashSett);
+                  //Info << "completeSize=" << hashSett.size() << ", completeList =\n" << endl;
+                  //for(label i=0;i<hashSett.size();i++) Info << " ," << hashSett.toc()[i] << endl;
+
+
+                //generating list with cell and subcells
+                scalar hashSetLength = hashSett.size();
+                if (hashSetLength > maxCellsPerParticle_)
+                {
+                    FatalError<< "big particle algo found more cells ("<< hashSetLength
+                              <<") than storage is prepared ("<<maxCellsPerParticle_<<")" << abort(FatalError);
+                }
+                else if (hashSetLength > 0)
+                {
+                    cellsPerParticle_[index][0]=hashSetLength;
+
+                    //making sure that the cell containing the center is the first subcell
+                    particleCloud_.cellIDs()[index][0]=particleCenterCellID;
+                    //deleting the cell containing the center of the particle
+                    hashSett.erase(particleCenterCellID);
+
+                    //==========================//
+                    //setting the voidfractions
+
+                    // volumefraction of centre use particle centre method
+                    particlefractionNext_[particleCenterCellID] = volume/particleCloud_.mesh().V()[particleCenterCellID];
+                    particleWeights[index][0] = 1;
+                    particleVolumes[index][0] = volume;
+                    particleV[index][0] = volume;
+
+                    // correct volumefraction of sub-cells
+                    for(label i=0;i<hashSetLength-1;i++)
+                    {
+                        label cellI=hashSett.toc()[i];
+                        particleCloud_.cellIDs()[index][i+1]=cellI; //adding subcell represenation
+                    }
+
+                    // debug
+                    if(index==0)
+                    {
+                        Info << "particle 0 is represented by " << hashSetLength << "cells" << endl;
+                    }
+                }//end cells found on this proc
+            }// end found cells
+        //}// end if masked
+    }// end loop all particles
     particlefractionNext_.correctBoundaryConditions();
 
     // bring voidfraction from Eulerian Field to particle array
@@ -123,9 +172,25 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
     }
 }
 
+void diffCentreVoidFraction::buildLabelHashSet
+(
+    const scalar radius,
+    const vector position,
+    const label cellID,
+    labelHashSet& hashSett
+)const
+{
+    hashSett.insert(cellID);
+    //Info<<"cell inserted"<<cellID<<endl;
+    const labelList& nc = particleCloud_.mesh().cellCells()[cellID];
+    forAll(nc,i){
+        label neighbor=nc[i];
+        if(!hashSett.found(neighbor) && mag(position-particleCloud_.mesh().C()[neighbor])<radius){
+            buildLabelHashSet(radius,position,neighbor,hashSett);
+        }
+    }
 
+}
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 } // End namespace Foam
-
 // ************************************************************************* //

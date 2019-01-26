@@ -110,6 +110,7 @@ forceModel::forceModel
     phiP2Interpolator_(NULL),
     alphaInterpolator_(NULL),
     gradAlphaInterpolator_(NULL),
+    sigmaKInterpolator_(NULL),
     TInterpolator_(NULL),
     UsInterpolator_(NULL),
     fluidScalarFieldInterpolator_(NULL),

@@ -68,7 +68,7 @@ constDiffSmoothing::constDiffSmoothing
     smoothingLength_(dimensionedScalar("smoothingLength",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
     smoothingLengthReferenceField_(dimensionedScalar("smoothingLengthReferenceField",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
     smoothCycles_(readScalar(propsDict_.lookup("smoothCycles"))),
-    DT_("DT", dimensionSet(0,2,-1,0,0), 0.),
+    variableDiffusionCoefficient_(true),
     verbose_(false)
 {
 
@@ -77,6 +77,9 @@ constDiffSmoothing::constDiffSmoothing
 
     if(propsDict_.found("smoothingLengthReferenceField"))  
        smoothingLengthReferenceField_.value() = double(readScalar(propsDict_.lookup("smoothingLengthReferenceField")));
+
+    if(propsDict_.found("variableDiffusionCoefficient"))  
+        variableDiffusionCoefficient_ = true;
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -105,19 +108,58 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
     sSmoothField.oldTime().correctBoundaryConditions();*/
     
     double deltaT = sSmoothField.mesh().time().deltaTValue();
+
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
     
-    // do smoothing
-    for
-    (
-        subCycle<volScalarField> alphasSubCycle(sSmoothField, smoothCycles_);!(++alphasSubCycle).end();
-    )
+    if (variableDiffusionCoefficient_)
     {
-        solve
+        volScalarField D
+        (   IOobject
+            (
+                "diffCoeff",
+                particleCloud_.mesh().time().timeName(),
+                particleCloud_.mesh(),
+                IOobject::NO_READ,//MUST_READ,
+                IOobject::NO_WRITE
+            ),
+            particleCloud_.mesh(),
+            dimensionedScalar("zero", dimensionSet(0,2,-1,0,0), 0)
+        );
+
+        forAll(D,cellI)
+        {
+
+            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_.value())
+                D[cellI] = DT_.value();
+            else
+                D[cellI] = DT_.value()/1000; 
+        }
+        
+        for
         (
+        subCycle<volScalarField> alphasSubCycle(sSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+        )
+        {
+            solve
+            (
+            fv::EulerDdtScheme<scalar>(particleCloud_.mesh()).fvmDdt(sSmoothField)
+           -fvm::laplacian(D, sSmoothField)
+            );
+        }
+    }
+    else
+    {
+        for
+        (
+        subCycle<volScalarField> alphasSubCycle(sSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+        )
+        {
+            solve
+            (
             fv::EulerDdtScheme<scalar>(particleCloud_.mesh()).fvmDdt(sSmoothField)
            -fvm::laplacian(DT_, sSmoothField)
-        );
+            );
+        }
     }
 
     // bound sSmoothField_
@@ -155,17 +197,55 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
 
     double deltaT = vSmoothField_.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
-
-    for
-    (
-        subCycle<volVectorField> alphasSubCycle(vSmoothField, smoothCycles_);!(++alphasSubCycle).end();
-    )
+    
+    if (variableDiffusionCoefficient_)
     {
-        solve
-        (
-            fv::EulerDdtScheme<vector>(particleCloud_.mesh()).fvmDdt(vSmoothField)
-           -fvm::laplacian(DT_, vSmoothField)
+        volScalarField D
+        (   IOobject
+            (
+                "diffCoeff",
+                particleCloud_.mesh().time().timeName(),
+                particleCloud_.mesh(),
+                IOobject::NO_READ,//MUST_READ,
+                IOobject::NO_WRITE
+            ),
+            particleCloud_.mesh(),
+            dimensionedScalar("zero", dimensionSet(0,2,-1,0,0), 0)
         );
+
+        forAll(D,cellI)
+        {
+            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_.value())
+                D[cellI] = DT_.value();
+            else
+                D[cellI] = DT_.value()/1000;  
+        }
+        
+        for
+        (
+            subCycle<volVectorField> alphasSubCycle(vSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+        )
+        {
+            solve
+            (
+                fv::EulerDdtScheme<vector>(particleCloud_.mesh()).fvmDdt(vSmoothField)
+               -fvm::laplacian(D, vSmoothField)
+            );
+        }
+    }
+    else
+    {
+        for
+        (
+            subCycle<volVectorField> alphasSubCycle(vSmoothField, smoothCycles_);!(++alphasSubCycle).end();
+        )
+        {
+            solve
+            (
+                fv::EulerDdtScheme<vector>(particleCloud_.mesh()).fvmDdt(vSmoothField)
+               -fvm::laplacian(DT_, vSmoothField)
+            );
+        }
     }
 
     // get data from working vSmoothField

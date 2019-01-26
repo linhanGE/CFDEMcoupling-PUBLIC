@@ -542,6 +542,11 @@ const volScalarField& forceSubModel::muField() const
     #endif
 }
 
+const volScalarField& forceSubModel::VoFmuField() const
+{
+    return particleCloud_.turbulence().mu();
+}
+
 const volScalarField& forceSubModel::rhoField() const
 {
     return rho_;
@@ -560,6 +565,14 @@ const volVectorField& forceSubModel::divTauField(const volVectorField& U) const
         divTau_ = -fvc::laplacian(nu_*rho_, U)- fvc::div(nu_*rho_*dev(fvc::grad(U)().T()));
         return divTau_;
     #endif
+}
+
+const volVectorField& forceSubModel::VoFdivTauField(const volVectorField& U) const
+{
+    // calc div(Tau)
+    const volScalarField& mu_ = muField();
+    divTau_ = -fvc::laplacian(mu_, U) - fvc::div(mu_*dev(fvc::grad(U)().T()));
+    return divTau_;    
 }
 
 const volVectorField& forceSubModel::IBDragPerV(const volVectorField& U,const volScalarField& p) const

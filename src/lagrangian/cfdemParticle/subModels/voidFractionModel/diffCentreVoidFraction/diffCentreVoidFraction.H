@@ -80,6 +80,17 @@ public:
 
     // Member Functions
         void setvoidFraction(double** const& ,double**&, double**&, double**&, double**&) const;
+
+        void buildLabelHashSet
+        (
+            const scalar radius,
+            const vector position,
+            const label cellID,
+            labelHashSet& hashSett
+            /*labelHashSet& hashSetComplete,
+            labelHashSet& hashSetPartial,
+            labelHashSet& hashSetRest*/
+        ) const;
 };
 
 

@@ -63,6 +63,7 @@ viscForce::viscForce
     propsDict_(dict.subDict(typeName + "Props")),
     velocityFieldName_(propsDict_.lookup("velocityFieldName")),
     U_(sm.mesh().lookupObject<volVectorField> (velocityFieldName_)),
+    backwardInterpolation_(false),
     addedMassCoeff_(0.0)
 {
     // block viscForceModel for type B
@@ -109,6 +110,9 @@ viscForce::viscForce
         particleCloud_.probeM().scalarFields_.append("Vs");
         particleCloud_.probeM().writeHeader();
     }
+    
+    if(propsDict_.found("backwardInterpolation_"))  
+        backwardInterpolation_ = true;
 }
 
 
@@ -129,7 +133,7 @@ void viscForce::setForce() const
     vector position;
     vector force;
     label cellI;
-
+    
     #include "resetDivTauInterpolator.H"
     #include "setupProbeModel.H"
 
@@ -148,7 +152,22 @@ void viscForce::setForce() const
                 if(forceSubM(0).interpolation()) // use intepolated values for alpha (normally off!!!)
                 {
                     divTau = divTauInterpolator_().interpolate(position,cellI);
-                }else
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalDivTauVol(0,0,0);
+                    scalar tolVol(0);
+
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalDivTauVol += divTau_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+
+                    divTau = totalDivTauVol /tolVol;
+                }
+                else
                 {
                     divTau = divTau_[cellI];
                 }

@@ -68,7 +68,7 @@ private:
     dimensionedScalar smoothingLengthReferenceField_;
     scalar smoothCycles_;
     mutable dimensionedScalar DT_;
-
+    bool variableDiffusionCoefficient_;
     bool verbose_;
 
 public:

@@ -63,6 +63,8 @@ private:
 
     const volVectorField& U_;
 
+    bool backwardInterpolation_;
+
     mutable double addedMassCoeff_; //added mass coefficient
 
 

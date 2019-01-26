@@ -66,6 +66,7 @@ MeiLift::MeiLift
     propsDict_(dict.subDict(typeName + "Props")),
     velFieldName_(propsDict_.lookup("velFieldName")),
     U_(sm.mesh().lookupObject<volVectorField> (velFieldName_)),
+    backwardInterpolation_(false),
     useSecondOrderTerms_(false)
 {
     if (propsDict_.found("useSecondOrderTerms")) useSecondOrderTerms_=true;
@@ -95,6 +96,8 @@ MeiLift::MeiLift
     particleCloud_.probeM().scalarFields_.append("Rew");          //other are debug
     particleCloud_.probeM().scalarFields_.append("J_star");       //other are debug
     particleCloud_.probeM().writeHeader();
+
+    if (propsDict_.found("backwardInterpolation")) backwardInterpolation_=true;
 }
 
 
@@ -114,6 +117,7 @@ void MeiLift::setForce() const
 
     vector position(0,0,0);
     vector lift(0,0,0);
+    vector Ufluid(0,0,0);
     vector Us(0,0,0);
     vector Ur(0,0,0);
     scalar magUr(0);
@@ -149,22 +153,37 @@ void MeiLift::setForce() const
 
             if (cellI > -1) // particle Found
             {
-                Us = particleCloud_.velocity(index);
-
+ 
                 if( forceSubM(0).interpolation() )
                 {
 	                position       = particleCloud_.position(index);
-                    Ur               = UInterpolator_().interpolate(position,cellI) 
-                                        - Us;
+                    Ufluid = UInterpolator_().interpolate(position,cellI);
                     vorticity       = vorticityInterpolator_().interpolate(position,cellI);
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalUfluidVol(0,0,0);
+                    vector totalVorticityVol(0,0,0);
+                    scalar tolVol(0);
+
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalUfluidVol += U_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        totalVorticityVol += vorticity_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    Ufluid = totalUfluidVol /tolVol;
+                    vorticity = totalVorticityVol/tolVol;
                 }
                 else
                 {
-                    Ur =  U_[cellI]
-                          - Us;
+                    Ufluid = U_[cellI];
                     vorticity=vorticity_[cellI];
                 }
 
+                Us = particleCloud_.velocity(index);
+                Ur = Ufluid-Us;
                 magUr           = mag(Ur);
                 magVorticity = mag(vorticity);
 

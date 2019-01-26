@@ -68,7 +68,8 @@ private:
     const surfaceScalarField& phi_;
 
     mutable double Cadd_;                  //indicator to split calculation of Urel between CFDEM and LIGGGHTS
-                                           //requires the integration fix to take dv/dt into account!
+
+    bool backwardInterpolation_;
 
 public:
 

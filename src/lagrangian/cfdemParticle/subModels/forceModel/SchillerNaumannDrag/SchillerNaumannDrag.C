@@ -99,7 +99,11 @@ SchillerNaumannDrag::SchillerNaumannDrag
 
     particleCloud_.checkCG(false);
 
-    if (propsDict_.found("backwardInterpolation")) backwardInterpolation_=true;
+    if (propsDict_.found("backwardInterpolation")) 
+    {
+        backwardInterpolation_=true;
+        Info << "Use average backward interpolation" <<endl;
+    }
 }
 
 
@@ -158,16 +162,19 @@ void SchillerNaumannDrag::setForce() const
             }
             else if (backwardInterpolation_)
             {
-                vector averageUfluid(0,0,0);
-                scalar averageVoidfraction(0);
+                vector totalUfluidVol(0,0,0);
+                scalar totalVoidfractionVol(0);
+                scalar tolVol(0);
+
                 for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
                 {
                     label subCellID = particleCloud_.cellIDs()[index][subCell];
-                    averageUfluid += U_[subCellID];
-                    averageVoidfraction += voidfraction_[subCellID];
+                    totalUfluidVol += U_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                    totalVoidfractionVol += voidfraction_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                    tolVol += particleCloud_.mesh().V()[subCellID];
                 }
-                Ufluid = averageUfluid /particleCloud_.cellsPerParticle()[index][0];
-                voidfraction = averageVoidfraction /particleCloud_.cellsPerParticle()[index][0];
+                Ufluid = totalUfluidVol /tolVol;
+                voidfraction = totalVoidfractionVol /tolVol;
             }
             else
             {

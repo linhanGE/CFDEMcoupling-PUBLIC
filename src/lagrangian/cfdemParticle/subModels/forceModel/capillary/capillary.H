@@ -81,11 +81,15 @@ private:
 
     scalar C2_; // damping coefficient
 
+    bool backwardInterpolation_;
+
     bool interpolation_; // use interpolated field values (does not work for fine grids???)
 
-    const volVectorField& centers;
+    bool verbose;
 
-    const scalarField& vols;
+    // const volVectorField& centers;
+
+    // const scalarField& vols;
     
     // IOdictionary alpha05Dict;
 

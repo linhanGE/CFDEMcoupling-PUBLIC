@@ -62,20 +62,17 @@ interface::interface
 :
     forceModel(dict,sm),
     propsDict_(dict.subDict(typeName + "Props")),
-    VOFvoidfractionFieldName_(propsDict_.lookup("VOFvoidfractionFieldName")),
-    alpha_(sm.mesh().lookupObject<volScalarField> (VOFvoidfractionFieldName_)),
-    gradAlphaName_(propsDict_.lookup("gradAlphaName")),
-    gradAlpha_(sm.mesh().lookupObject<volVectorField> (gradAlphaName_)),
-    sigma_(readScalar(propsDict_.lookup("sigma"))),
+    alphaFieldName_(propsDict_.lookup("alphaFieldName")),
+    alpha_(sm.mesh().lookupObject<volScalarField> (alphaFieldName_)),
+    sigmaKFieldName_(propsDict_.lookup("sigmaKFieldName")),
+    sigmaK_(sm.mesh().lookupObject<volScalarField> (sigmaKFieldName_)),
     theta_(readScalar(propsDict_.lookup("theta"))),
-    alphaThreshold_(readScalar(propsDict_.lookup("alphaThreshold"))),
-    deltaAlphaIn_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
-    deltaAlphaOut_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
-    C_(1.0),
-    interpolation_(false)
+    alphaLower_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
+    alphaUpper_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
+    backwardInterpolation_(false),
+    interpolation_(false),
+    verbose(false)
 {
-    if (propsDict_.found("C")) C_=readScalar(propsDict_.lookup("C"));
-
     // init force sub model
     setForceSubModels(propsDict_);
 
@@ -83,12 +80,16 @@ interface::interface
     forceSubM(0).setSwitchesList(0,true); // activate treatExplicit switch
     forceSubM(0).setSwitchesList(4,true); // activate search for interpolate switch
 
+    forceSubM(0).setSwitches(0,true);
     // read those switches defined above, if provided in dict
     forceSubM(0).readSwitches();
     //for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
     //    forceSubM(iFSub).readSwitches();
 
     particleCloud_.checkCG(false);
+
+    if(propsDict_.found("backwardInterpolation_"))  
+        backwardInterpolation_ = true;
 }
 
 
@@ -102,8 +103,11 @@ interface::~interface()
 
 void interface::setForce() const
 {
+    volVectorField gradAlpha_ = fvc::grad(alpha_);
+
     #include "resetAlphaInterpolator.H"
     #include "resetGradAlphaInterpolator.H"
+    #include "resetSigmaKInterpolator.H"
 
     for(int index = 0;index <  particleCloud_.numberOfParticles(); ++index)
     {
@@ -116,17 +120,33 @@ void interface::setForce() const
 
             if(cellI >-1.0) // particle found on proc domain
             {
-                scalar alphap;
-                vector magGradAlphap;
+                scalar alphap(0);
+                vector gradAlpha(0,0,0);
+                scalar sigmaK(0);
 
                 if(forceSubM(0).interpolation()) // use intepolated values for alpha (normally off!!!)
                 {
                     // make interpolation object for alpha
                     alphap = alphaInterpolator_().interpolate(position,cellI);
-
                     // make interpolation object for grad(alpha)/|grad(alpha)|
-                    vector gradAlphap = gradAlphaInterpolator_().interpolate(position,cellI);
-                    magGradAlphap = gradAlphap/max(mag(gradAlphap),SMALL);
+                    gradAlpha = gradAlphaInterpolator_().interpolate(position,cellI);
+                    sigmaK = sigmaKInterpolator_().interpolate(position,cellI);
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalGradAlphaVol(0,0,0);
+                    scalar totalSigmaKVol(0);
+                    scalar tolVol(0);
+ 
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalGradAlphaVol += gradAlpha_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        totalSigmaKVol += sigmaK_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    gradAlpha = totalGradAlphaVol /tolVol;
+                    sigmaK = totalSigmaKVol /tolVol;
                 }
                 else // use cell centered values for alpha
                 {
@@ -134,47 +154,31 @@ void interface::setForce() const
                     //volVectorField gradAlpha=fvc::grad(alpha_);
                     //volVectorField a = gradAlpha/
                     //                   max(mag(gradAlpha),dimensionedScalar("a",dimensionSet(0,-1,0,0,0), SMALL));
-                    //magGradAlphap = a[cellI];
+                    //n = a[cellI];
 
                     alphap = alpha_[cellI];
-                    volVectorField a = gradAlpha_/
-                                       max(mag(gradAlpha_),dimensionedScalar("a",dimensionSet(0,-1,0,0,0), SMALL));
-                    magGradAlphap = a[cellI];
+                    gradAlpha = gradAlpha_[cellI];
+                    sigmaK = sigmaK_[cellI];
                 }
 
                 // Initialize an interfaceForce vector
                 vector interfaceForce = Foam::vector(0,0,0);
-
+                scalar Vs = particleCloud_.particleVolume(index);
                 // Calculate the interfaceForce (range of alphap needed for stability)
 
-                if ((alphaThreshold_-deltaAlphaIn_) < alphap && alphap < (alphaThreshold_+deltaAlphaOut_))
+                if ( alphaLower_ < alphap && alphap < alphaUpper_)
                 {
-                    Info << "within threshold limits" << endl;
-                    // Calculate estimate attachment force as
-                    // |6*sigma*sin(pi-theta/2)*sin(pi+theta/2)|*2*pi*dp
-                    scalar Fatt =   mag(
-                                   6
-                                 * sigma_
-                                 * sin(M_PI - theta_/2)
-                                 * sin(M_PI + theta_/2)
-                            )
-                      * M_PI
-                      * dp;
-
-                    interfaceForce = - magGradAlphap
-                         * tanh(alphap-alphaThreshold_)
-                         * Fatt
-                         * C_;
+                    interfaceForce = -Vs*sigmaK*gradAlpha*theta_;
                 }
 
-                if(true && mag(interfaceForce) > 0)
+                if(verbose && mag(interfaceForce) > 0)
                 {
                 Info << "dp = " << dp << endl;
                 Info << "position = " << position << endl;
                 Info << "cellI = " << cellI << endl;
                 Info << "alpha cell = " << alpha_[cellI] << endl;
                 Info << "alphap = " << alphap << endl;
-                Info << "magGradAlphap = " << magGradAlphap << endl;
+                Info << "gradAlpha = " << gradAlpha << endl;
                 Info << "interfaceForce = " << interfaceForce << endl;
                 Info << "mag(interfaceForce) = " << mag(interfaceForce) << endl;
                 }

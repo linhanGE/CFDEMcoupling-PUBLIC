@@ -68,6 +68,7 @@ gradPForce::gradPForce
     U_(sm.mesh().lookupObject<volVectorField> (velocityFieldName_)),
     useRho_(false),
     useU_(false),
+    backwardInterpolation_(false),
     addedMassCoeff_(0.0)
 {
     // block gradPForceModel for type B
@@ -116,6 +117,9 @@ gradPForce::gradPForce
         particleCloud_.probeM().scalarFields_.append("rho");
         particleCloud_.probeM().writeHeader();
     }
+
+    if(propsDict_.found("backwardInterpolation_"))  
+        backwardInterpolation_ = true;
 }
 
 
@@ -163,12 +167,25 @@ void gradPForce::setForce() const
                 if(forceSubM(0).interpolation()) // use intepolated values for alpha (normally off!!!)
                 {
                     gradP = gradPInterpolator_().interpolate(position,cellI);
-                }else
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalGradPVol(0,0,0);
+                    scalar tolVol(0);
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalGradPVol += gradP_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    gradP = totalGradPVol /tolVol;
+                }
+                else
                 {
                     gradP = gradP_[cellI];
                 }
 
-                Vs = particleCloud_.particleVolume(index);
+                Vs = particleCloud_.particleVolume(index); //particleV_
                 rho = forceSubM(0).rhoField()[cellI];
 
                 // calc particle's pressure gradient force

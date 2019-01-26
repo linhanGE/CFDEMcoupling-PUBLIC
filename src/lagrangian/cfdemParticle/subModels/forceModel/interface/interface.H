@@ -58,27 +58,25 @@ class interface
 private:
     dictionary propsDict_;
 
-    word VOFvoidfractionFieldName_;
+    word alphaFieldName_;
 
     const volScalarField& alpha_;    // ref to VOF voidfraction
 
-    word gradAlphaName_;
+    word sigmaKFieldName_;
 
-    const volVectorField& gradAlpha_;    // ref to fvc::grad(VOF voidfraction)
-
-    const scalar sigma_;
+    const volScalarField& sigmaK_;
 
     const scalar theta_;
 
-    const scalar alphaThreshold_;
+    const scalar  alphaLower_;
 
-    const scalar  deltaAlphaIn_;
+    const scalar  alphaUpper_;
 
-    const scalar  deltaAlphaOut_;
-
-    scalar C_; // model constant
+    bool backwardInterpolation_;
 
     bool interpolation_; // use interpolated field values (does not work for fine grids???)
+
+    bool verbose;
 
 public:
 

@@ -69,7 +69,8 @@ virtualMassForce::virtualMassForce
     U_(sm.mesh().lookupObject<volVectorField> (velFieldName_)),
     phiFieldName_(propsDict_.lookup("phiFieldName")),
     phi_(sm.mesh().lookupObject<surfaceScalarField> (phiFieldName_)),
-    Cadd_(0.5)
+    Cadd_(0.5),
+    backwardInterpolation_(false)
 {
     // init force sub model
     setForceSubModels(propsDict_);
@@ -98,6 +99,12 @@ virtualMassForce::virtualMassForce
     particleCloud_.probeM().scalarFields_.append("Vs");
     particleCloud_.probeM().scalarFields_.append("rho");
     particleCloud_.probeM().writeHeader();
+
+    if (propsDict_.found("backwardInterpolation")) 
+    {
+        backwardInterpolation_=true;
+        Info << "Use average backward interpolation" <<endl;
+    }
 }
 
 
@@ -140,18 +147,27 @@ void virtualMassForce::setForce() const
                 {
 	                position     = particleCloud_.position(index);
                     Ufluid       = UInterpolator_().interpolate(position,cellI);
+                    DDtU = DDtUInterpolator_().interpolate(position,cellI);
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalUfluidVol(0,0,0);
+                    vector totalDDtUVol(0,0,0);
+                    scalar tolVol(0);
+
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalUfluidVol += U_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        totalDDtUVol += DDtU_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    Ufluid = totalUfluidVol /tolVol;
+                    DDtU = totalDDtUVol /tolVol;
                 }
                 else
                 {
                     Ufluid = U_[cellI];
-                }
-
-                if(forceSubM(0).interpolation()) 
-                {
-                    DDtU = DDtUInterpolator_().interpolate(position,cellI);
-                }
-                else
-                {
                     DDtU = DDtU_[cellI];
                 }
                 

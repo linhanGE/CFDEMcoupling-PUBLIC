@@ -233,9 +233,13 @@ public:
 
         const volScalarField& muField() const;
 
+        const volScalarField& VoFmuField() const;
+
         const volScalarField& rhoField() const;
 
         const volVectorField& divTauField(const volVectorField&) const;
+
+        const volVectorField& VoFdivTauField(const volVectorField&) const;
 
         const volVectorField& IBDragPerV(const volVectorField&,const volScalarField&) const;
 
