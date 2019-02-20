@@ -103,9 +103,6 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
     sSmoothField.dimensions().reset(fieldSrc.dimensions());
     sSmoothField ==fieldSrc;
     sSmoothField.correctBoundaryConditions();
-    /*sSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
-    sSmoothField.oldTime()=fieldSrc;
-    sSmoothField.oldTime().correctBoundaryConditions();*/
     
     double deltaT = sSmoothField.mesh().time().deltaTValue();
 
@@ -119,7 +116,7 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
                 "diffCoeff",
                 particleCloud_.mesh().time().timeName(),
                 particleCloud_.mesh(),
-                IOobject::NO_READ,//MUST_READ,
+                IOobject::NO_READ,
                 IOobject::NO_WRITE
             ),
             particleCloud_.mesh(),

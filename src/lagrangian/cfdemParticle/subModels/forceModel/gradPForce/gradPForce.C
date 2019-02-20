@@ -198,7 +198,7 @@ void gradPForce::setForce() const
                 {
                     Info << "index = " << index << endl;
                     Info << "gradP = " << gradP << endl;
-                    Info << "force = " << force << endl;
+                    Info << "gradForce = " << force << endl;
                 }
 
                 //Set value fields and write the probe

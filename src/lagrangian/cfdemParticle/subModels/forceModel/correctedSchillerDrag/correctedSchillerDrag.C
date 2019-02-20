@@ -31,7 +31,7 @@ Description
 
 #include "error.H"
 
-#include "SchillerNaumannDrag.H"
+#include "correctedSchillerDrag.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -41,12 +41,12 @@ namespace Foam
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(SchillerNaumannDrag, 0);
+defineTypeNameAndDebug(correctedSchillerDrag, 0);
 
 addToRunTimeSelectionTable
 (
     forceModel,
-    SchillerNaumannDrag,
+    correctedSchillerDrag,
     dictionary
 );
 
@@ -54,7 +54,7 @@ addToRunTimeSelectionTable
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 // Construct from components
-SchillerNaumannDrag::SchillerNaumannDrag
+correctedSchillerDrag::correctedSchillerDrag
 (
     const dictionary& dict,
     cfdemCloud& sm
@@ -68,6 +68,8 @@ SchillerNaumannDrag::SchillerNaumannDrag
     voidfraction_(sm.mesh().lookupObject<volScalarField> (voidfractionFieldName_)),
     UsFieldName_(propsDict_.lookup("granVelFieldName")),
     UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
+    db_(readScalar(propsDict_.lookup("bubbleDiameter"))),
+	H_(readScalar(propsDict_.lookup("cutoffH"))),
     backwardInterpolation_(false)
 {
     // suppress particle probe
@@ -109,13 +111,13 @@ SchillerNaumannDrag::SchillerNaumannDrag
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-SchillerNaumannDrag::~SchillerNaumannDrag()
+correctedSchillerDrag::~correctedSchillerDrag()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void SchillerNaumannDrag::setForce() const
+void correctedSchillerDrag::setForce() const
 {
     const volScalarField& nufField = forceSubM(0).nuField();
     const volScalarField& rhoField = forceSubM(0).rhoField();
@@ -134,6 +136,7 @@ void SchillerNaumannDrag::setForce() const
     vector Us(0,0,0);
     vector Ur(0,0,0);
     scalar ds(0);
+	scalar rs(0);
     scalar dParcel(0);
     scalar nuf(0);
     scalar rho(0);
@@ -183,6 +186,7 @@ void SchillerNaumannDrag::setForce() const
             }
 
             Us = particleCloud_.velocity(index);
+			rs = particleCloud_.radius(index);
             ds = 2*particleCloud_.radius(index);
             dParcel = ds;
             forceSubM(0).scaleDia(ds,index); //caution: this fct will scale ds!
@@ -214,18 +218,61 @@ void SchillerNaumannDrag::setForce() const
                 // calc fluid drag Coeff
                 Cd = max(0.44,24.0/Rep*(1.0+0.15*pow(Rep,0.687)));
 
+                
                 // calc particle's drag
                 dragCoefficient = 0.125*Cd*rho
                                   *M_PI
                                   *ds*ds
                                   *magUr;
 
-                if (modelType_=="B")
-                    dragCoefficient /= voidfraction;
-
                 // calc particle's drag
                 forceSubM(0).scaleCoeff(dragCoefficient,dParcel,index);
-                drag = dragCoefficient*Ur;
+			
+				scalar dx = position.x();
+				scalar dy = position.y();
+				scalar dz = position.z();
+				
+				scalar rsq = dx*dx+dy*dy+dz*dz;
+				scalar r = sqrt(rsq);
+				scalar rinv = 1/r;
+				
+			    scalar enx = dx*rinv;
+                scalar eny = dy*rinv;
+                scalar enz = dz*rinv;
+
+                scalar vx = Us.x();
+                scalar vy = Us.y();
+                scalar vz = Us.z();
+				
+				scalar Ux = Ufluid.x();
+                scalar Uy = Ufluid.y();
+                scalar Uz = Ufluid.z();
+				
+				scalar vn_ = vx*enx+vy*eny+vz*enz;
+				scalar Un_ = Ux*enx+Uy*eny+Uz*enz;
+				
+				scalar vn1 = vn_ * enx;
+                scalar vn2 = vn_ * eny;
+                scalar vn3 = vn_ * enz;
+                
+				scalar Un1 = Un_ * enx;
+                scalar Un2 = Un_ * eny;
+                scalar Un3 = Un_ * enz;
+				
+				vector vn(vn1,vn2,vn3);
+				vector vt(vx-vn1,vy-vn2,vz-vn3);
+				
+				vector Un(Un1,Un2,Un3);
+				vector Ut(Ux-Un1,Uy-Un2,Uz-Un3);
+				
+                scalar H = r-(rs+0.5*db_);
+				scalar Hf1f3 = max(H,H_);
+				scalar f1 = pow(1+pow(rs/Hf1f3,0.89),1.124);
+				scalar f2 = (2.022+H/rs)/(0.626+H/rs);				
+				scalar f3 = pow(1+0.498*pow(log(1.207*pow(rs/Hf1f3,0.986)+1),1.027),0.979);
+                scalar f4 = 1+9/16*(rs/(H+rs));
+                
+                drag = dragCoefficient*(Un*f2+Ut*f4-(vn*f1+vt*f3));
                     
                 // explicitCorr
                 for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)

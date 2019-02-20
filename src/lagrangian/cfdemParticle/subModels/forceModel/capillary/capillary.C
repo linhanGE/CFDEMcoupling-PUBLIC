@@ -228,7 +228,7 @@ void capillary::setForce() const
                     }
                 }
                 // separate distance between the point and the interface
-                h = sqr((position.x()-interfacePoint.x())*(position.x()-interfacePoint.x())
+                h = sqrt((position.x()-interfacePoint.x())*(position.x()-interfacePoint.x())
                    +(position.y()-interfacePoint.y())*(position.y()-interfacePoint.y())
                    +(position.z()-interfacePoint.z())*(position.z()-interfacePoint.z()));*/
 

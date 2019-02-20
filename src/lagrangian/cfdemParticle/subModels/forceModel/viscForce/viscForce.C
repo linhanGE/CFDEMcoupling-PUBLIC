@@ -181,8 +181,8 @@ void viscForce::setForce() const
                 if(forceSubM(0).verbose() && index >0 && index <2)
                 {
                     Info << "index = " << index << endl;
-                    Info << "gradP = " << divTau << endl;
-                    Info << "force = " << force << endl;
+                    Info << "divTau = " << divTau << endl;
+                    Info << "viscForce = " << force << endl;
                 }
 
                 //Set value fields and write the probe
