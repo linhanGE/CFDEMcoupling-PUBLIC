@@ -64,10 +64,11 @@ private:
     dictionary propsDict_;
     scalar lowerLimit_;
     scalar upperLimit_;
-    dimensionedScalar smoothingLength_;
+    scalar smoothingLength_;
     dimensionedScalar smoothingLengthReferenceField_;
     scalar smoothCycles_;
     mutable dimensionedScalar DT_;
+    tensor smoothDirection_;
     bool variableDiffusionCoefficient_;
     bool verbose_;
 

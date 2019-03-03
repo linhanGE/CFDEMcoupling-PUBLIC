@@ -31,7 +31,6 @@ pair_coeff  * *
 
 # timestep, gravity
 timestep    0.00001
-fix         gravi all gravity 9.81 vector 0.0 0.0 -1.0
 
 # walls
 fix     zwalls1  all wall/gran model hertz tangential history primitive type 1 zplane 0.0

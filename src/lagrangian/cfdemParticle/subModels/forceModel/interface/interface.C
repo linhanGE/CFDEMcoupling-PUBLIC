@@ -67,8 +67,8 @@ interface::interface
     sigmaKFieldName_(propsDict_.lookup("sigmaKFieldName")),
     sigmaK_(sm.mesh().lookupObject<volScalarField> (sigmaKFieldName_)),
     theta_(readScalar(propsDict_.lookup("theta"))),
-    alphaLower_(readScalar(propsDict_.lookup("deltaAlphaIn"))),
-    alphaUpper_(readScalar(propsDict_.lookup("deltaAlphaOut"))),
+    alphaLower_(readScalar(propsDict_.lookup("alphaLower"))),
+    alphaUpper_(readScalar(propsDict_.lookup("alphaUpper"))),
     backwardInterpolation_(false),
     interpolation_(false),
     verbose(false)
@@ -88,7 +88,7 @@ interface::interface
 
     particleCloud_.checkCG(false);
 
-    if(propsDict_.found("backwardInterpolation_"))  
+    if(propsDict_.found("backwardInterpolation"))  
         backwardInterpolation_ = true;
 }
 
@@ -198,7 +198,6 @@ void interface::setForce() const
             } // end if particle found on proc domain
         //}// end if in mask
     }// end loop particles
-Info << "interface::setForce - done" << endl;
 }
 
 

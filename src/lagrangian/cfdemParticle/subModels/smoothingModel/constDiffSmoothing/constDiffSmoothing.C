@@ -65,10 +65,10 @@ constDiffSmoothing::constDiffSmoothing
     propsDict_(dict.subDict(typeName + "Props")),
     lowerLimit_(readScalar(propsDict_.lookup("lowerLimit"))),
     upperLimit_(readScalar(propsDict_.lookup("upperLimit"))),
-    smoothingLength_(dimensionedScalar("smoothingLength",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
+    smoothingLength_(readScalar(propsDict_.lookup("smoothingLength"))),
     smoothingLengthReferenceField_(dimensionedScalar("smoothingLengthReferenceField",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
     smoothCycles_(readScalar(propsDict_.lookup("smoothCycles"))),
-    variableDiffusionCoefficient_(true),
+    variableDiffusionCoefficient_(false),
     verbose_(false)
 {
 
@@ -80,6 +80,13 @@ constDiffSmoothing::constDiffSmoothing
 
     if(propsDict_.found("variableDiffusionCoefficient"))  
         variableDiffusionCoefficient_ = true;
+
+    smoothDirection_ = propsDict_.lookupOrDefault
+    (
+        "smoothDirection",
+        tensor(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0)
+    );
+
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -103,14 +110,14 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
     sSmoothField.dimensions().reset(fieldSrc.dimensions());
     sSmoothField ==fieldSrc;
     sSmoothField.correctBoundaryConditions();
-    
+     
     double deltaT = sSmoothField.mesh().time().deltaTValue();
-
-    DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
     
+    DT_.value() = smoothingLength_ * smoothingLength_ / deltaT;
+
     if (variableDiffusionCoefficient_)
     {
-        volScalarField D
+        volTensorField D
         (   IOobject
             (
                 "diffCoeff",
@@ -120,16 +127,16 @@ void Foam::constDiffSmoothing::smoothen(volScalarField& fieldSrc) const
                 IOobject::NO_WRITE
             ),
             particleCloud_.mesh(),
-            dimensionedScalar("zero", dimensionSet(0,2,-1,0,0), 0)
+            dimensionedTensor("zero", dimensionSet(0,2,-1,0,0), tensor::zero)
         );
 
         forAll(D,cellI)
         {
 
-            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_.value())
-                D[cellI] = DT_.value();
+            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_)
+                D[cellI] = DT_.value()*smoothDirection_;
             else
-                D[cellI] = DT_.value()/1000; 
+                D[cellI] = DT_.value()*smoothDirection_/1000; 
         }
         
         for
@@ -186,36 +193,36 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
     volVectorField vSmoothField = vSmoothField_;
 
     vSmoothField.dimensions().reset(fieldSrc.dimensions());
-    vSmoothField=fieldSrc;
+    vSmoothField ==fieldSrc;
     vSmoothField.correctBoundaryConditions();
     /*vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
     vSmoothField.oldTime()=fieldSrc;
     vSmoothField.oldTime().correctBoundaryConditions();*/
 
     double deltaT = vSmoothField_.mesh().time().deltaTValue();
-    DT_.value() = smoothingLength_.value() * smoothingLength_.value() / deltaT;
-    
+    DT_.value() = smoothingLength_ * smoothingLength_ / deltaT;
+
     if (variableDiffusionCoefficient_)
     {
-        volScalarField D
+        volTensorField D
         (   IOobject
             (
                 "diffCoeff",
                 particleCloud_.mesh().time().timeName(),
                 particleCloud_.mesh(),
-                IOobject::NO_READ,//MUST_READ,
+                IOobject::NO_READ,
                 IOobject::NO_WRITE
             ),
             particleCloud_.mesh(),
-            dimensionedScalar("zero", dimensionSet(0,2,-1,0,0), 0)
+            dimensionedTensor("zero", dimensionSet(0,2,-1,0,0), tensor::zero)
         );
 
         forAll(D,cellI)
         {
-            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_.value())
-                D[cellI] = DT_.value();
+            if (pow(particleCloud_.mesh().V()[cellI], 1.0/3.0) <= 2*smoothingLength_)
+                D[cellI] = DT_.value()*smoothDirection_;
             else
-                D[cellI] = DT_.value()/1000;  
+                D[cellI] = DT_.value()*smoothDirection_/1000;
         }
         
         for

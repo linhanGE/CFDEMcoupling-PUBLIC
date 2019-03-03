@@ -177,7 +177,7 @@ void viscForce::setForce() const
                 // calc the contribution of the deviatoric stress 
                 // to the generalized buoyancy force
                 force = -Vs*divTau*(1.0+addedMassCoeff_);
-
+                
                 if(forceSubM(0).verbose() && index >0 && index <2)
                 {
                     Info << "index = " << index << endl;

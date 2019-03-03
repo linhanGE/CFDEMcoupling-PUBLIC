@@ -92,9 +92,7 @@ voidFractionModel::voidFractionModel
             IOobject::READ_IF_PRESENT,//MUST_READ,
             IOobject::NO_WRITE
         ),
-        sm.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),    // since fraction will automatically calculate before running CFD
-		zeroGradientFvPatchScalarField::typeName
+        sm.mesh().lookupObject<volScalarField> ("particlefraction")
     ),
 	particlefractionNext_
     (   IOobject
@@ -105,9 +103,7 @@ voidFractionModel::voidFractionModel
             IOobject::READ_IF_PRESENT,//MUST_READ,
             IOobject::NO_WRITE
         ),
-        sm.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
-		zeroGradientFvPatchScalarField::typeName
+        sm.mesh().lookupObject<volScalarField> ("particlefraction")
     ),
     alphaGNext_
     (   IOobject
@@ -118,9 +114,8 @@ voidFractionModel::voidFractionModel
             IOobject::READ_IF_PRESENT,//MUST_READ,
             IOobject::NO_WRITE
         ),
-        sm.mesh(),
-        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0),
-		zeroGradientFvPatchScalarField::typeName
+        particleCloud_.mesh(),
+        dimensionedScalar("zero", dimensionSet(0,0,0,0,0), 0)
     ),
     cellsPerParticle_(NULL),
     maxCellsPerParticle_(1),
