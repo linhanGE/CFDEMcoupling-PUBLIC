@@ -70,6 +70,8 @@ interface::interface
     alphaLower_(readScalar(propsDict_.lookup("alphaLower"))),
     alphaUpper_(readScalar(propsDict_.lookup("alphaUpper"))),
     backwardInterpolation_(false),
+    limitForce_(false),
+    C_(readScalar(propsDict_.lookup("C"))),   
     interpolation_(false),
     verbose(false)
 {
@@ -90,6 +92,9 @@ interface::interface
 
     if(propsDict_.found("backwardInterpolation"))  
         backwardInterpolation_ = true;
+
+    if(propsDict_.found("limitForce"))  
+        limitForce_ = true;
 }
 
 
@@ -164,11 +169,18 @@ void interface::setForce() const
                 // Initialize an interfaceForce vector
                 vector interfaceForce = Foam::vector(0,0,0);
                 scalar Vs = particleCloud_.particleVolume(index);
+                scalar rhop = particleCloud_.Density(index);
+                
                 // Calculate the interfaceForce (range of alphap needed for stability)
 
-                if ( alphaLower_ < alphap && alphap < alphaUpper_)
+                if ( alphaLower_ < alphap && alphap < alphaUpper_ && !limitForce_)
                 {
-                    interfaceForce = -Vs*sigmaK*gradAlpha*theta_;
+                    interfaceForce = -Vs*sigmaK*gradAlpha*cos(theta_);
+                }
+
+                if ( alphaLower_ < alphap && alphap < alphaUpper_ && limitForce_)
+                {
+                    interfaceForce = C_*Vs*rhop*gradAlpha;
                 }
 
                 if(verbose && mag(interfaceForce) > 0)
@@ -194,6 +206,8 @@ void interface::setForce() const
 
                // write particle based data to global array
                forceSubM(0).partToArray(index,interfaceForce,vector::zero);
+
+               forceSubM(0).passInterfaceForce(index,interfaceForce);
 
             } // end if particle found on proc domain
         //}// end if in mask

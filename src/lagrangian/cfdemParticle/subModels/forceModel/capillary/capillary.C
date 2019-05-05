@@ -113,7 +113,7 @@ capillary::capillary
 
     particleCloud_.checkCG(false);
 
-    if(propsDict_.found("backwardInterpolation_"))  
+    if(propsDict_.found("backwardInterpolation"))  
         backwardInterpolation_ = true;
 }
 

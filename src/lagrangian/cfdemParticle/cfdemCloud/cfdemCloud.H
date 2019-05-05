@@ -124,11 +124,21 @@ protected:
 
     mutable double **DEMForces_;
 
+    mutable double **gradPForce_;
+
+    mutable double **viscForce_;
+
+    mutable double **dragOnlyForce_;
+
+    mutable double **liftForce_;
+
+    mutable double **interfaceForce_;
+
     mutable double **Cds_;
 
     mutable double **radii_;
 	
-	mutable double **density_;
+	  mutable double **density_;
 
     mutable int **type_;
 
@@ -179,6 +189,8 @@ protected:
     mutable bool treatVoidCellsAsExplicitForce_; //will treat the coupling force in cells with no Us data explicitly
 
     mutable word useDDTvoidfraction_;
+
+    mutable word passIndividualForce_;
 
     bool UsmoothFlag_;
 
@@ -375,12 +387,22 @@ public:
        inline double ** expForces() const;
 
        inline double ** DEMForces() const;
+      
+       inline double ** gradPForce() const;
+
+       inline double ** viscForce() const;
+       
+       inline double ** dragOnlyForce() const;
+
+       inline double ** liftForce() const;
+
+       inline double ** interfaceForce() const;
 
        inline double ** Cds() const;
 
        inline double ** radii() const;
 	   
-	   inline double ** density() const;
+	     inline double ** density() const;
 
        inline int ** type() const;
 
@@ -388,7 +410,7 @@ public:
 
        inline void get_radii(double**&) const;
 	   
-	   inline void get_density(double**&) const;
+	    inline void get_density(double**&) const;
 
        inline void get_type(int**&) const;
 

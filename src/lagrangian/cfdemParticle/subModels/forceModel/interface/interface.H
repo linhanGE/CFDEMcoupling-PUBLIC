@@ -74,6 +74,10 @@ private:
 
     bool backwardInterpolation_;
 
+    bool limitForce_; // use spring model or not
+
+    const scalar C_;   // stiffness
+
     bool interpolation_; // use interpolated field values (does not work for fine grids???)
 
     bool verbose;

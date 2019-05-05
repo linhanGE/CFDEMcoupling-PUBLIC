@@ -79,6 +79,8 @@ private:
     const volVectorField& UsField_;  // the average particle velocity field
 
     mutable scalar switchingVoidfraction_; //voidfraction above which dilute formulation will be used
+	
+	bool backwardInterpolation_;
 
 public:
 

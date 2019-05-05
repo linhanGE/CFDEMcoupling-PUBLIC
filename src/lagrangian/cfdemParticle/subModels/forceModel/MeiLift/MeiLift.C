@@ -299,6 +299,8 @@ void MeiLift::setForce() const
             }
             // write particle based data to global array
             forceSubM(0).partToArray(index,lift,vector::zero);
+
+            forceSubM(0).passLiftForce(index,lift);
         //}
     }
 

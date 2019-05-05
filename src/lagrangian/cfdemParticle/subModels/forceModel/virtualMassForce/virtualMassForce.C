@@ -67,8 +67,6 @@ virtualMassForce::virtualMassForce
     propsDict_(dict.subDict(typeName + "Props")),
     velFieldName_(propsDict_.lookup("velFieldName")),
     U_(sm.mesh().lookupObject<volVectorField> (velFieldName_)),
-    phiFieldName_(propsDict_.lookup("phiFieldName")),
-    phi_(sm.mesh().lookupObject<surfaceScalarField> (phiFieldName_)),
     Cadd_(0.5),
     backwardInterpolation_(false)
 {
@@ -78,6 +76,7 @@ virtualMassForce::virtualMassForce
     forceSubM(0).setSwitchesList(0,true); // activate treatExplicit switch
     forceSubM(0).setSwitchesList(1,true); // activate treatForceDEM switch (DEM side only treatment)
     forceSubM(0).setSwitchesList(4,true); // activate search for interpolate switch
+    
 
     for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
         forceSubM(iFSub).readSwitches();
@@ -119,21 +118,19 @@ virtualMassForce::~virtualMassForce()
 
 void virtualMassForce::setForce() const
 {
-    scalar dt = U_.mesh().time().deltaT().value();
 
     vector position(0,0,0);
     vector Ufluid(0,0,0);
     vector DDtU(0,0,0);
-
+    
     //Compute extra vfields in case it is needed
     volVectorField DDtU_(0.0*U_/U_.mesh().time().deltaT());
-    DDtU_ = fvc::ddt(U_) + fvc::div(phi_, U_); //Total Derivative of fluid velocity
+    surfaceScalarField phi_ = fvc::flux(U_);
+    DDtU_ = fvc::DDt(phi_, U_); //Total Derivative of fluid velocity
 
     #include "resetUInterpolator.H"
     #include "resetDDtUInterpolator.H"
     #include "setupProbeModel.H"
-
-    bool haveUrelOld_(false); 
 
     for(int index = 0;index <  particleCloud_.numberOfParticles(); index++)
     {
@@ -174,7 +171,7 @@ void virtualMassForce::setForce() const
                 scalar ds = 2*particleCloud_.radius(index);
                 scalar Vs = ds*ds*ds*M_PI/6;
                 scalar rho = forceSubM(0).rhoField()[cellI];
-
+                
                 virtualMassForce = Cadd_ * rho * Vs * DDtU;
 
                 if( forceSubM(0).verbose() ) //&& index>100 && index < 105)

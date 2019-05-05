@@ -68,6 +68,7 @@ constDiffSmoothing::constDiffSmoothing
     smoothingLength_(readScalar(propsDict_.lookup("smoothingLength"))),
     smoothingLengthReferenceField_(dimensionedScalar("smoothingLengthReferenceField",dimensionSet(0,1,0,0,0,0,0), readScalar(propsDict_.lookup("smoothingLength")))),
     smoothCycles_(readScalar(propsDict_.lookup("smoothCycles"))),
+    DT_("DT", dimensionSet(0,2,-1,0,0), 0.),
     variableDiffusionCoefficient_(false),
     verbose_(false)
 {
@@ -193,12 +194,11 @@ void Foam::constDiffSmoothing::smoothen(volVectorField& fieldSrc) const
     volVectorField vSmoothField = vSmoothField_;
 
     vSmoothField.dimensions().reset(fieldSrc.dimensions());
-    vSmoothField ==fieldSrc;
+    vSmoothField = fieldSrc;
     vSmoothField.correctBoundaryConditions();
     /*vSmoothField.oldTime().dimensions().reset(fieldSrc.dimensions());
     vSmoothField.oldTime()=fieldSrc;
     vSmoothField.oldTime().correctBoundaryConditions();*/
-
     double deltaT = vSmoothField_.mesh().time().deltaTValue();
     DT_.value() = smoothingLength_ * smoothingLength_ / deltaT;
 

@@ -220,6 +220,57 @@ void forceSubModel::partToArray
     }
 }
 
+void forceSubModel::passGradPForce
+(
+    const label& index,
+    const vector& force
+) const
+{
+    for(int j=0;j<3;j++)
+        myForceM().gradPForce()[index][j] += force[j];
+}
+
+void forceSubModel::passViscForce
+(
+    const label& index,
+    const vector& force
+) const
+{
+    for(int j=0;j<3;j++)
+        myForceM().viscForce()[index][j] += force[j];
+}
+
+void forceSubModel::passDragOnlyForce
+(
+    const label& index,
+    const vector& force
+) const
+{
+    for(int j=0;j<3;j++)
+        myForceM().dragOnlyForce()[index][j] += force[j];
+}
+
+void forceSubModel::passLiftForce
+(
+    const label& index,
+    const vector& force
+) const
+{
+    for(int j=0;j<3;j++)
+        myForceM().liftForce()[index][j] += force[j];
+}
+
+void forceSubModel::passInterfaceForce
+(
+    const label& index,
+    const vector& force
+) const
+{
+    for(int j=0;j<3;j++)
+        myForceM().interfaceForce()[index][j] += force[j];
+}
+
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 void forceSubModel::partToArrayAnisotropic
 (

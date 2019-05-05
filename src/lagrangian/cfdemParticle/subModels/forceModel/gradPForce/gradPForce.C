@@ -118,7 +118,7 @@ gradPForce::gradPForce
         particleCloud_.probeM().writeHeader();
     }
 
-    if(propsDict_.found("backwardInterpolation_"))  
+    if(propsDict_.found("backwardInterpolation"))  
         backwardInterpolation_ = true;
 }
 
@@ -216,6 +216,8 @@ void gradPForce::setForce() const
 
             // write particle based data to global array
             forceSubM(0).partToArray(index,force,vector::zero);
+            
+            forceSubM(0).passGradPForce(index,force);
 
         //}
     }

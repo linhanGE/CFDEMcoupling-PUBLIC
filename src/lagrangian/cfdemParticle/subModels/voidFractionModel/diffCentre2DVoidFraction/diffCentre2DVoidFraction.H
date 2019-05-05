@@ -29,19 +29,17 @@ Description
     and OpenFOAM(R). Note: this code is not part of OpenFOAM(R) (see DISCLAIMER).
 
 Class
-    virtualMassForce
+    diffCentre2DVoidFraction
 
 SourceFiles
-    virtualMassForce.C
+    diffCentre2DVoidFraction.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef virtualMassForce_H
-#define virtualMassForce_H
+#ifndef diffCentre2DVoidFraction_H
+#define diffCentre2DVoidFraction_H
 
-#include "forceModel.H"
-#include "dataExchangeModel.H"
-#include "interpolationCellPoint.H"
+#include "voidFractionModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -49,34 +47,31 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class virtualMassForce Declaration
+                           Class noDrag Declaration
 \*---------------------------------------------------------------------------*/
 
-class virtualMassForce
+class diffCentre2DVoidFraction
 :
-    public forceModel
+    public voidFractionModel
 {
+
 private:
-    dictionary propsDict_;
+        dictionary propsDict_;
 
-    word velFieldName_;
+        scalar     realDepth_;
 
-    const volVectorField& U_;
-
-    mutable double Cadd_;                  //indicator to split calculation of Urel between CFDEM and LIGGGHTS
-
-    bool backwardInterpolation_;
+        scalar     virtualDepth_;
 
 public:
 
     //- Runtime type information
-    TypeName("virtualMassForce");
+    TypeName("diff2DCentre");
 
 
     // Constructors
 
         //- Construct from components
-        virtualMassForce
+        diffCentre2DVoidFraction
         (
             const dictionary& dict,
             cfdemCloud& sm
@@ -84,11 +79,22 @@ public:
 
     // Destructor
 
-        ~virtualMassForce();
+        ~diffCentre2DVoidFraction();
 
 
     // Member Functions
-        void setForce() const;
+        void setvoidFraction(double** const& ,double**&, double**&, double**&, double**&) const;
+
+        void buildLabelHashSet
+        (
+            const scalar radius,
+            const vector position,
+            const label cellID,
+            labelHashSet& hashSett
+            /*labelHashSet& hashSetComplete,
+            labelHashSet& hashSetPartial,
+            labelHashSet& hashSetRest*/
+        ) const;
 };
 
 

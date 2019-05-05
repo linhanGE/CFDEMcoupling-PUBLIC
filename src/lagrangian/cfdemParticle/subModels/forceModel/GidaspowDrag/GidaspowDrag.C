@@ -70,7 +70,8 @@ GidaspowDrag::GidaspowDrag
     phi_(propsDict_.lookupOrDefault<scalar>("phi",1.)),
     UsFieldName_(propsDict_.lookup("granVelFieldName")),
     UsField_(sm.mesh().lookupObject<volVectorField> (UsFieldName_)),
-    switchingVoidfraction_(0.8)
+    switchingVoidfraction_(0.8),
+    backwardInterpolation_(false)
 {
     //Append the field names to be probed
     // suppress particle probe
@@ -104,6 +105,9 @@ GidaspowDrag::GidaspowDrag
 
     if (propsDict_.found("switchingVoidfraction"))
         switchingVoidfraction_ = readScalar(propsDict_.lookup("switchingVoidfraction"));
+    
+    if(propsDict_.found("backwardInterpolation"))  
+        backwardInterpolation_ = true;
 }
 
 
@@ -184,6 +188,22 @@ void GidaspowDrag::setForce() const
                     // Info << " --> voidfraction: " << voidfraction << endl;
                     if(voidfraction>1.00) voidfraction = 1.0;
                     if(voidfraction<0.10) voidfraction = 0.10;
+                }
+                else if (backwardInterpolation_)
+                {
+                    vector totalUfluidVol(0,0,0);
+                    scalar totalVoidfractionVol(0);
+                    scalar tolVol(0);
+
+                    for(int subCell=0;subCell<particleCloud_.cellsPerParticle()[index][0];subCell++) 
+                    {
+                        label subCellID = particleCloud_.cellIDs()[index][subCell];
+                        totalUfluidVol += U_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        totalVoidfractionVol += voidfraction_[subCellID]*particleCloud_.mesh().V()[subCellID];
+                        tolVol += particleCloud_.mesh().V()[subCellID];
+                    }
+                    Ufluid = totalUfluidVol /tolVol;
+                    voidfraction = totalVoidfractionVol /tolVol;
                 }
                 else
                 {
@@ -287,6 +307,8 @@ void GidaspowDrag::setForce() const
 
             // write particle based data to global array
             forceSubM(0).partToArray(index,drag,dragExplicit,Ufluid,dragCoefficient);
+
+            forceSubM(0).passDragOnlyForce(index,drag);
 
         //}// end if mask
     }// end loop particles

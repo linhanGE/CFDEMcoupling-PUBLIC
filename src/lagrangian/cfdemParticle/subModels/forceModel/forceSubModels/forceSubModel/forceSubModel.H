@@ -147,6 +147,16 @@ public:
     // Member Functions
         void partToArray(const label&, const vector&, const vector&, const vector& Ufluid=vector::zero, scalar Cd=scalar(0)) const;
 
+        void passGradPForce(const label&, const vector&) const;
+
+        void passViscForce(const label&, const vector&) const;
+
+        void passDragOnlyForce(const label&, const vector&) const;
+
+        void passLiftForce(const label&, const vector&) const;
+
+        void passInterfaceForce(const label&, const vector&) const;
+
         //function to set anisotropic drag components for DEM side only.
         void partToArrayAnisotropic(const label&, const vector&, const vector& dragEx=vector::zero) const;
 

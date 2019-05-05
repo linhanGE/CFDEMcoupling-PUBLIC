@@ -93,6 +93,11 @@ Foam::cfdemCloud::cfdemCloud
     impForces_(NULL),
     expForces_(NULL),
     DEMForces_(NULL),
+    gradPForce_(NULL),
+    viscForce_(NULL),
+    dragOnlyForce_(NULL),
+    liftForce_(NULL),
+    interfaceForce_(NULL),
     Cds_(NULL),
     radii_(NULL),
 	density_(NULL),
@@ -119,6 +124,7 @@ Foam::cfdemCloud::cfdemCloud
     imExSplitFactor_(1.0),
     treatVoidCellsAsExplicitForce_(false),
     useDDTvoidfraction_("off"),
+    passIndividualForce_("off"),
     UsmoothFlag_(false),
     ddtVoidfraction_
     (   
@@ -326,6 +332,11 @@ Foam::cfdemCloud::cfdemCloud
     }
     else        
         Info << "ignoring ddt(voidfraction)" << endl;
+
+    if (couplingProperties_.found("passIndividualForce"))
+    {
+        passIndividualForce_ = word(couplingProperties_.lookup("passIndividualForce"));
+    }
     
     if (couplingProperties_.found("Usmooth"))
         UsmoothFlag_=Switch(couplingProperties_.lookup("Usmooth"));
@@ -444,6 +455,11 @@ Foam::cfdemCloud::~cfdemCloud()
     dataExchangeM().destroy(impForces_,3);
     dataExchangeM().destroy(expForces_,3);
     dataExchangeM().destroy(DEMForces_,3);
+    dataExchangeM().destroy(gradPForce_,3);
+    dataExchangeM().destroy(viscForce_,3);
+    dataExchangeM().destroy(dragOnlyForce_,3);
+    dataExchangeM().destroy(liftForce_,3);
+    dataExchangeM().destroy(interfaceForce_,3);
     dataExchangeM().destroy(Cds_,1);
     dataExchangeM().destroy(radii_,1);
 	dataExchangeM().destroy(density_,1);
@@ -487,7 +503,16 @@ void Foam::cfdemCloud::giveDEMdata()
 
     dataExchangeM().giveData("dragforce","vector-atom",DEMForces_);
 
-    if(impDEMdrag_)
+    if (passIndividualForce_=="on")
+    {
+        dataExchangeM().giveData("gradPForce","vector-atom",gradPForce_);
+        dataExchangeM().giveData("viscForce","vector-atom",viscForce_);
+        dataExchangeM().giveData("dragOnlyForce","vector-atom",dragOnlyForce_);
+        dataExchangeM().giveData("liftForce","vector-atom",liftForce_);
+        dataExchangeM().giveData("interfaceForce","vector-atom",interfaceForce_);        
+    }
+
+    if(impDEMdrag_)           // is set to be true in forceSubModel::readSwitches()
     {
         if(verbose_) Info << "sending Ksl and uf" << endl;
         dataExchangeM().giveData("Ksl","scalar-atom",Cds_);
@@ -552,6 +577,11 @@ void Foam::cfdemCloud::setForces()
     resetArray(impForces_,numberOfParticles(),3);
     resetArray(expForces_,numberOfParticles(),3);
     resetArray(DEMForces_,numberOfParticles(),3);
+    resetArray(gradPForce_,numberOfParticles(),3);
+    resetArray(viscForce_,numberOfParticles(),3);
+    resetArray(dragOnlyForce_,numberOfParticles(),3);
+    resetArray(interfaceForce_,numberOfParticles(),3);
+    resetArray(liftForce_,numberOfParticles(),3);
     resetArray(Cds_,numberOfParticles(),1);
 
     //=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=
@@ -986,7 +1016,7 @@ bool Foam::cfdemCloud::diffusionEvolve
             FatalError << "cfdemCloud::dataExchangeM().timeStepFraction() = "<< dataExchangeM().timeStepFraction() <<" must be >1 or <0 : This might be due to the fact that you used a adjustable CFD time step. Please use a fixed CFD time step." << abort(FatalError);
         }
         clockM().start(24,"interpolateEulerFields");
-      
+        
          // update voidFractionField
         setAlphaDiffusion(alpha);
         
@@ -1010,10 +1040,10 @@ bool Foam::cfdemCloud::diffusionEvolve
         // update mean particle velocity Field
         Us = averagingM().UsNext();
         Us.correctBoundaryConditions();
-
+         
         // calc ddt(voidfraction)
         calcDdtVoidfraction(alpha,Us);
- 
+        
         clockM().stop("interpolateEulerFields");
         //============================================
 
@@ -1212,6 +1242,11 @@ bool Foam::cfdemCloud::reAllocArrays() const
         dataExchangeM().allocateArray(impForces_,0.,3);
         dataExchangeM().allocateArray(expForces_,0.,3);
         dataExchangeM().allocateArray(DEMForces_,0.,3);
+        dataExchangeM().allocateArray(gradPForce_,0.,3);
+        dataExchangeM().allocateArray(viscForce_,0.,3);
+        dataExchangeM().allocateArray(dragOnlyForce_,0.,3);
+        dataExchangeM().allocateArray(liftForce_,0.,3);
+        dataExchangeM().allocateArray(interfaceForce_,0.,3);
         dataExchangeM().allocateArray(Cds_,0.,1);
         dataExchangeM().allocateArray(radii_,0.,1);
 		dataExchangeM().allocateArray(density_,0.,1);
@@ -1246,6 +1281,11 @@ bool Foam::cfdemCloud::reAllocArrays(int nP, bool forceRealloc) const
         dataExchangeM().allocateArray(impForces_,0.,3,nP);
         dataExchangeM().allocateArray(expForces_,0.,3,nP);
         dataExchangeM().allocateArray(DEMForces_,0.,3,nP);
+        dataExchangeM().allocateArray(gradPForce_,0.,3,nP);
+        dataExchangeM().allocateArray(viscForce_,0.,3,nP);
+        dataExchangeM().allocateArray(dragOnlyForce_,0.,3,nP);
+        dataExchangeM().allocateArray(liftForce_,0.,3,nP);
+        dataExchangeM().allocateArray(interfaceForce_,0.,3,nP);
         dataExchangeM().allocateArray(Cds_,0.,1,nP);
         dataExchangeM().allocateArray(radii_,0.,1,nP);
 		dataExchangeM().allocateArray(density_,0.,1,nP);

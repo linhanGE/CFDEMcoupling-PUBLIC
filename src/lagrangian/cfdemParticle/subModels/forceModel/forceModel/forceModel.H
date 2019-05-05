@@ -213,6 +213,16 @@ public:
         inline double ** expForces() const { return particleCloud_.expForces_;};
 
         inline double ** DEMForces() const { return particleCloud_.DEMForces_;};
+
+        inline double ** gradPForce() const { return particleCloud_.gradPForce_;};
+
+        inline double ** viscForce() const { return particleCloud_.viscForce_;};
+
+        inline double ** dragOnlyForce() const { return particleCloud_.dragOnlyForce_;};
+
+        inline double ** liftForce() const { return particleCloud_.liftForce_;};
+
+        inline double ** interfaceForce() const { return particleCloud_.interfaceForce_;};
         
         inline double ** DEMTorques() const { return particleCloud_.DEMTorques();};
 

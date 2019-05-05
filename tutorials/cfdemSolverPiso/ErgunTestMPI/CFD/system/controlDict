@@ -67,8 +67,8 @@ functions
         name        probes;
         probeLocations
         (
-            (0.00003 0 0.0001)
-            (0.00003 0 0.0529)
+            (0.0130 0 0.06)
+            (-0.013 0 0.06)
         );
 
         // Fields to be probed

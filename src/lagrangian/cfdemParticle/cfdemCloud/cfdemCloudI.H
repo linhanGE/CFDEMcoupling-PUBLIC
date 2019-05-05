@@ -167,6 +167,31 @@ inline double ** cfdemCloud::DEMForces() const
     return DEMForces_;
 }
 
+inline double ** cfdemCloud::gradPForce() const
+{
+    return gradPForce_;
+}
+
+inline double ** cfdemCloud::viscForce() const
+{
+    return viscForce_;
+}
+
+inline double ** cfdemCloud::dragOnlyForce() const
+{
+    return dragOnlyForce_;
+}
+
+inline double ** cfdemCloud::liftForce() const
+{
+    return liftForce_;
+}
+
+inline double ** cfdemCloud::interfaceForce() const
+{
+    return interfaceForce_;
+}
+
 inline double ** cfdemCloud::Cds() const
 {
     return Cds_;

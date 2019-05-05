@@ -100,7 +100,7 @@ DiFeliceDrag::DiFeliceDrag
     for (int iFSub=0;iFSub<nrForceSubModels();iFSub++)
         forceSubM(iFSub).readSwitches();
     
-    if(propsDict_.found("backwardInterpolation_"))  
+    if(propsDict_.found("backwardInterpolation"))  
         backwardInterpolation_ = true;
 }
 
@@ -272,6 +272,8 @@ void DiFeliceDrag::setForce() const
 
             // write particle based data to global array
             forceSubM(0).partToArray(index,drag,dragExplicit,Ufluid,dragCoefficient);
+
+            forceSubM(0).passDragOnlyForce(index,drag);
     }
 }
 
