@@ -59,6 +59,19 @@
         ),
         mesh
     );
+	
+	volScalarField particlefraction
+    (
+        IOobject
+        (
+            "particlefraction",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh
+    );
 
     Info<< "\nCreating density field rho\n" << endl;
     volScalarField rho

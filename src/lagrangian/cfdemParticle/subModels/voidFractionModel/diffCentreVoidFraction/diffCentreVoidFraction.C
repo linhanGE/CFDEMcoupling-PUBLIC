@@ -140,12 +140,11 @@ void diffCentreVoidFraction::setvoidFraction(double** const& mask,double**& void
                     //setting the voidfractions
 
                     // volumefraction of centre use particle centre method
-                    particlefractionNext_[particleCenterCellID] = volume/particleCloud_.mesh().V()[particleCenterCellID];
+                    particlefractionNext_[particleCenterCellID] += volume/particleCloud_.mesh().V()[particleCenterCellID];
                     particleWeights[index][0] = 1;
                     particleVolumes[index][0] = volume;
                     particleV[index][0] = volume;
 
-                    // correct volumefraction of sub-cells
                     for(label i=0;i<hashSetLength-1;i++)
                     {
                         label cellI=hashSett.toc()[i];
