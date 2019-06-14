@@ -58,6 +58,7 @@ $(forceModels)/GidaspowDrag/GidaspowDrag.C
 $(forceModels)/gradPForce/gradPForce.C
 $(forceModels)/interface/interface.C
 $(forceModels)/capillary/capillary.C
+$(forceModels)/surfaceTensionForce/surfaceTensionForce.C
 $(forceModels)/KochHillDrag/KochHillDrag.C
 $(forceModels)/LaEuScalarTemp/LaEuScalarTemp.C
 $(forceModels)/MeiLift/MeiLift.C

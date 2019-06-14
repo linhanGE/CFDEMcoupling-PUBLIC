@@ -142,7 +142,7 @@ void diffCentre2DVoidFraction::setvoidFraction(double** const& mask,double**& vo
                     //setting the voidfractions
 
                     // volumefraction of centre use particle centre method
-                    particlefractionNext_[particleCenterCellID] = volume/(particleCloud_.mesh().V()[particleCenterCellID]/realDepth_*virtualDepth_);
+                    particlefractionNext_[particleCenterCellID] += volume/(particleCloud_.mesh().V()[particleCenterCellID]/realDepth_*virtualDepth_);
                     particleWeights[index][0] = 1;
                     particleVolumes[index][0] = volume;
                     particleV[index][0] = volume;

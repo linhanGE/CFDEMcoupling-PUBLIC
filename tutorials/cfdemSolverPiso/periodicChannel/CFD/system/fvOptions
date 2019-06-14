@@ -25,8 +25,8 @@ momentumSource
         selectionMode   all; // apply force to all cells
 
         fields      (U); // name of velocity field
-        Ubar            (10 0 0);// desired mean velocity
-        relaxation      0.9; // optional relaxation factor
+        Ubar            (0.001 0 0);// desired mean velocity
+        // relaxation      0.9; // optional relaxation factor
         twoPhase        false;
         coupled         true;
         voidfractionField "voidfraction";

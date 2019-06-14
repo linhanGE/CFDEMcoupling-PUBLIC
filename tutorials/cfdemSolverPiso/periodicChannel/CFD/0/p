@@ -31,7 +31,8 @@ boundaryField
     }
     wall
     {
-        type            zeroGradient;
+       type            fixedFluxPressure;
+	   value           uniform 0;
     }
 }
 

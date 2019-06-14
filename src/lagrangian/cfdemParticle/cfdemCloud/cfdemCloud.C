@@ -125,6 +125,7 @@ Foam::cfdemCloud::cfdemCloud
     treatVoidCellsAsExplicitForce_(false),
     useDDTvoidfraction_("off"),
     passIndividualForce_("off"),
+	useDiluteModel_("off"),
     UsmoothFlag_(false),
     ddtVoidfraction_
     (   
@@ -337,6 +338,12 @@ Foam::cfdemCloud::cfdemCloud
     {
         passIndividualForce_ = word(couplingProperties_.lookup("passIndividualForce"));
     }
+	
+	if (couplingProperties_.found("useDiluteModel"))
+    {
+        useDiluteModel_ = word(couplingProperties_.lookup("useDiluteModel"));
+    }
+	
     
     if (couplingProperties_.found("Usmooth"))
         UsmoothFlag_=Switch(couplingProperties_.lookup("Usmooth"));
@@ -984,8 +991,12 @@ bool Foam::cfdemCloud::diffusionEvolve
             }
           
             //Smoothen "next" fields            
-            smoothingM().dSmoothing();
-			smoothingM().smoothen(voidFractionM().particleFractionNext());
+            if (useDiluteModel_== "off")
+			{
+				smoothingM().dSmoothing();
+			    smoothingM().smoothen(voidFractionM().particleFractionNext());
+			}
+			
             
             if (useDDTvoidfraction_== word("a")) 
             {
@@ -1018,7 +1029,15 @@ bool Foam::cfdemCloud::diffusionEvolve
         clockM().start(24,"interpolateEulerFields");
         
          // update voidFractionField
-        setAlphaDiffusion(alpha);
+        if (useDiluteModel_== "off")
+		{
+			setAlphaDiffusion(alpha);
+		}
+		else
+		{
+			alpha.primitiveFieldRef() = 1;
+			alpha.correctBoundaryConditions();
+		}			
         
         /*if(dataExchangeM().couplingStep() < 2)
         {

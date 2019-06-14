@@ -191,6 +191,8 @@ protected:
     mutable word useDDTvoidfraction_;
 
     mutable word passIndividualForce_;
+	
+	mutable word useDiluteModel_;
 
     bool UsmoothFlag_;
 

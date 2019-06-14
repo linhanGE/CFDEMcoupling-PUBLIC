@@ -23,7 +23,7 @@ export CFDEM_PROJECT_USER_DIR=$HOME/CFDEM/$LOGNAME-$CFDEM_VERSION-$WM_PROJECT_VE
 export CFDEM_bashrc=$CFDEM_PROJECT_DIR/src/lagrangian/cfdemParticle/etc/bashrc
 export CFDEM_LIGGGHTS_SRC_DIR=$HOME/LIGGGHTS/LIGGGHTS-PUBLIC/src
 export CFDEM_LIGGGHTS_MAKEFILE_NAME=auto
-export CFDEM_LPP_DIR=$HOME/LIGGGHTS/mylpp/src
+export CFDEM_LPP_DIR=$HOME/LIGGGHTS/lpp/src
 #. $CFDEM_bashrc
 #================================================#
 #------------------------------------------------------------------------------
